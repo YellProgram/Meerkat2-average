@@ -2,7 +2,6 @@
 // Created by Arkadiy on 02/06/2017.
 //
 
-
 #include "IntensityData.h"
 
 bool isYellFormat(H5File& file) {
