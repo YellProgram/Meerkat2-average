@@ -94,7 +94,7 @@ public:
     void test_run_averaging() {
         auto inp = IntensityData<float>::read("visual-test.h5");
         auto res = IntensityData<float>::empty(inp);
-        average(inp, res, "m3m");
+        average(inp, res, "m3m", InputParameters());
         res.save("visual-test-out.h5");
     }
 // GOT:
