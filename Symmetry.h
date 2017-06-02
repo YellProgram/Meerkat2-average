@@ -15,6 +15,6 @@ using namespace std;
 
 vector<Matrix3i> expand_symmetry(const string& symmetry);
 
-void average(IntensityData<float>&, const string& symmetry);
+void average(IntensityData<float>& inp, IntensityData<float>& res, const string& symmetry);
 
 #endif //MEERKAT2_AVERAGE_SYMMETRY_H

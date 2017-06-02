@@ -215,9 +215,17 @@ public:
         writeYellFormatString(file);
     }
 
-
-    static IntensityData empty(const IntensityData& inp);
-
+    template<typename T2>
+    static inline IntensityData empty(const IntensityData<T2>& inp) {
+        IntensityData res;
+        res.size = inp.size;
+        res.isDirect = inp.isDirect;
+        res.lower_limits = inp.lower_limits;
+        res.step_sizes = inp.step_sizes;
+        res.unit_cell = inp.unit_cell;
+        res.data = vector<T>(inp.data.size(), 0);
+        return res;
+    }
 
     vector<size_t> size;
 //    bool in_memory;

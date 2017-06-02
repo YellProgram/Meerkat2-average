@@ -90,6 +90,13 @@ public:
         TS_ASSERT_DELTA(-2, inp.lower_limits[1], eps);
         TS_ASSERT_DELTA(-3, inp.lower_limits[2], eps);
     }
+
+    void test_run_averaging() {
+        auto inp = IntensityData<float>::read("visual-test.h5");
+        auto res = IntensityData<float>::empty(inp);
+        average(inp, res, "m3m");
+        res.save("visual-test-out.h5");
+    }
 // GOT:
 // matrix library eigen up and running, found matrix multiplication and vectors and matrices
 // Load the instruction file

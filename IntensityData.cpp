@@ -18,7 +18,6 @@ bool isYellFormat(H5File& file) {
 
     if(format!="Yell 1.0")
         return false;
-
     else
         return true;
 }
