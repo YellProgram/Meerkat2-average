@@ -184,13 +184,11 @@ InputParameters parse_input(const string& filename) {
 //            in >> par.data_filename_template;
         }else if (keyword == "OUTPUT")
             in >> par.output_name;
-        else if (keyword == "SYMMTERY") {
+        else if (keyword == "SYMMETRY") {
             in >> par.symmetry;
-            if(! isIn(par.symmetry, {"-1", "mmm", "m3m"}))
+            if(! isIn(par.symmetry, {"-1", "mmm", "m3m", "1"}))
                 throw_parser_error(filename, in, "Unknown symmetry\""+ par.symmetry + "\"");
-        }
-
-        else if (keyword == "REJECT_OUTLIERS") {
+        }else if (keyword == "REJECT_OUTLIERS") {
             string user_input;
             in >> user_input;
             string user_input_l = to_lower(user_input);
@@ -200,9 +198,26 @@ InputParameters parse_input(const string& filename) {
                 par.reject_outliers = false;
             else
                 throw_parser_error(filename, in, "Unexpected value\""+ user_input + "\"");
-        }
-        else if(keyword == "THRESHOLD")
+        }else if(keyword == "SLICE"){
+            par.slice = vector<float>(6,0);
+            in >> par.slice[0] >> par.slice[1] >> par.slice[2] >> par.slice[3] >> par.slice[4] >> par.slice[5];
+        }else if(keyword == "THRESHOLD")
             in >> par.threshold;
+        else if(keyword == "SCALES") {
+            string inputs;
+            getline(in, inputs);
+            auto t = split(inputs, ' ');
+            par.scales = vector<float>(t.size(), 0);
+            transform(t.begin(), t.end(), par.scales.begin(), [](const string& in) {return ::atof(in.c_str());});
+        }else if (keyword=="PUNCH_AND_FILL") {
+            par.punch_and_fill = true;
+            in >> par.r_punch >> par.r_fill;
+        }else if(keyword=="BIN"){
+            par.bin = true;
+            in >> par.binning[0] >> par.binning[1] >> par.binning[2];
+        }else if(keyword=="FFT"){
+            par.fft = true;
+        }
         else {
             throw_parser_error(filename, in, "Unknown keyword \"" + keyword + "\"");
         }

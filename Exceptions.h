@@ -30,4 +30,11 @@ public:
     ~UnknownFormat() throw() {}
 };
 
+class InvalidSlice : std::exception {
+public:
+    InvalidSlice(string description): description(description) {}
+    ~InvalidSlice() throw() {}
+    string description;
+};
+
 #endif //MEERKAT2_AVERAGE_EXCEPTIONS_H

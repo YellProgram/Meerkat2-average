@@ -24,18 +24,35 @@ vector<string> split(const string& input_string, char where);
 ContextAroundPosition get_context(istream& in);
 // end of parser
 
-
 struct InputParameters {
     vector<string> input_files;
     string output_name;
     string symmetry;
     bool reject_outliers;
     double threshold;
+    vector<float> slice;
+    vector<float> scales;
+    bool punch_and_fill;
+    float r_punch;
+    float r_fill;
+    bool bin;
+    bool fft;
+    vector<int> binning;
 
     InputParameters() :
             reject_outliers(true),
-            threshold(3)
+            threshold(3),
+            punch_and_fill(false),
+            r_punch(0),
+            r_fill(0),
+            bin(false),
+            binning{1,1,1},
+            fft(false)
     { };
+
+    bool should_slice() {
+        return slice.size()>0;
+    }
 };
 
 InputParameters parse_input(const string& filename);

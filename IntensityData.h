@@ -8,6 +8,8 @@
 #include <string>
 #include <vector>
 #include <assert.h>
+#include <cmath>
+#include <sstream>
 
 #include "Exceptions.h"
 #include "H5Cpp.h"
@@ -164,12 +166,26 @@ void writeYellFormatString(H5File& file);
 // LATER: subsection
 // LATER: fft (if I need FFT i will need temporarily create complex double dataset
 
+struct Slice {
+    bool everything;
+    vector<float> limits;
+    Slice(const vector<float> &limits):
+            limits(limits),
+            everything(false)
+    {}
+
+    Slice(): everything(true)
+    {}
+};
+
+//const Slice Slice::ALL
+
 template<typename T>
 class IntensityData {
 public:
     IntensityData() {}
 
-    static inline IntensityData<T> read(string filename) {
+    static inline IntensityData<T> read(const string& filename, const Slice& slice) {
         IntensityData<T> res;
 
         auto readProps = FileAccPropList::DEFAULT;
@@ -183,24 +199,69 @@ public:
         if(not isYellFormat(dataFile))
             throw UnknownFormat();
 
-        DataSet data = dataFile.openDataSet("data");
-
         //Read dataset and crystal data
         res.isDirect = readConstant<bool>(dataFile, "is_direct");
+        res.unit_cell = readVector<double, 6>(dataFile, "unit_cell");
 
         res.lower_limits = readVector<double,3>(dataFile,"lower_limits");
         res.step_sizes = readVector<double, 3>(dataFile, "step_sizes");
-        res.unit_cell = readVector<double, 6>(dataFile, "unit_cell");
-//    metricTensor = metricTensorFromUnitCell(unitCell, !isDirect);
 
-        DSetCreatPropList cparms = data.getCreatePlist();
-
+        DataSet data = dataFile.openDataSet("data");
         hsize_t datasetDimesions[3];
         data.getSpace().getSimpleExtentDims( datasetDimesions, NULL);
-
         res.size = vector<size_t>(begin(datasetDimesions), end(datasetDimesions));
 
-        res.data = readVector<float>(dataFile, "data");
+        //SLICE HERE
+        if(slice.everything) {
+            res.data = readVector<float>(dataFile, "data");
+        }
+        else{
+            vector<int> start_pixels(3,0);
+            vector<int> end_pixels(3,0);
+            for(int i = 0; i<3; ++i){
+                if(slice.limits[i] < res.lower_limits[i]-res.step_sizes[i]/2) {
+                    stringstream err;
+
+                    err << "lower limit error, requested: " << slice.limits[0] << ' ' << slice.limits[1] << ' ' << slice.limits[2];
+                    err << " while dataset allows " << res.lower_limits[0] << ' ' << res.lower_limits[1] << ' ' << res.lower_limits[2];
+                    throw InvalidSlice(err.str());
+                }
+                if(slice.limits[i + 3] > res.lower_limits[i]+res.step_sizes[i]*(res.size[i]-0.5)) {
+                    stringstream err;
+
+                    err << "upper limit error, requested: " << slice.limits[4] << ' ' << slice.limits[5] << ' ' << slice.limits[6];
+                    err << " while dataset allows ";
+                    for(int k = 0; k < 3; ++k)
+                        err << res.lower_limits[k]+res.step_sizes[k]*res.size[k] << ' ';
+
+                    throw InvalidSlice(err.str());
+                }
+                if(slice.limits[i] > slice.limits[i+3]) {
+                    throw InvalidSlice("reverse slice is not allowed");
+                }
+
+                start_pixels[i] = round((slice.limits[i]-res.lower_limits[i])/res.step_sizes[i]);
+                end_pixels[i]   = round((slice.limits[i+3]-res.lower_limits[i])/res.step_sizes[i]);
+            }
+            for(int i = 0; i < 3; ++i) {
+                res.size[i] = end_pixels[i]-start_pixels[i]+1;
+                res.lower_limits[i] += res.step_sizes[i]*start_pixels[i];
+            }
+
+            DataSet dataset = dataFile.openDataSet("data");
+            DataSpace dataspace = dataset.getSpace();
+            vector<hsize_t> memspaceOffset(start_pixels.begin(), start_pixels.end());
+            vector<hsize_t> spaceCount(res.size.begin(), res.size.end());
+            dataspace.selectHyperslab(H5S_SELECT_SET, spaceCount.data(), memspaceOffset.data());
+
+            res.data = vector<T>(res.size[0]*res.size[1]*res.size[2]);
+
+            DataSpace memspace(3, spaceCount.data());
+            dataset.read(res.data.data(), getH5Type<T>(), memspace, dataspace);
+        }
+
+//    metricTensor = metricTensorFromUnitCell(unitCell, !isDirect);
+//        DSetCreatPropList cparms = data.getCreatePlist();
         return res;
     }
 
@@ -244,6 +305,19 @@ public:
     vector<double> step_sizes;
 //    vector<vector<double> > metric_tensor;
     vector<double> unit_cell;
+
+    void scale(double sc) {
+        for(auto& d : data)
+            d *= sc;
+    }
+
+    void accumulate(IntensityData& inp, double scale = 1) {
+        for(auto d1 = data.begin(), d2 = inp.data.begin(); d1 != data.end(); ++d1, ++d2)
+        {
+            *d1 += (*d2)*scale;
+        }
+
+    }
 private:
 };
 

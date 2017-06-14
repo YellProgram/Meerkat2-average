@@ -9,7 +9,7 @@ set(HDF5_LIBRARIES hdf5_hl_cpp hdf5_cpp hdf5_hl hdf5 szip z )
 include_directories(${LIBHDF5_DIR}/include ${LIBCBF_DIR}/include lib/eigen)
 link_directories(${LIBHDF5_DIR}/lib ${LIBCBF_DIR}/lib)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3") #
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11") # -O3
 
 set(SOURCE_FILES
         InputParameters.cpp InputParameters.h Exceptions.h Symmetry.cpp Symmetry.h IntensityData.cpp IntensityData.h)

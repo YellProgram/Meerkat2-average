@@ -105,10 +105,25 @@ public:
 // EASY: can do this internally, by using << of eigen and only do it for mmm and m3m - the groups I care about ATM
 // load reconstructions
 // write out reconstructions
+// average data without outlier rejection first
+
+// Slice - parse, input it (1830 - 2130)
+// Load multiple datasets (if not multiple, just load in place otherwise make a temporary array and get rid of it as necessary)
+// add scale factors
+
 
 // TODO:
+// Add a keyword for backgrounds? not important atm
 
-// average data without outlier rejection first
+// then average, implemented
+
+// Remove Bragg peaks. For now a sphere will be ok rpunch:rfill, though median fill
+// Later will need some rules to which peaks not to touch (systematic absences, damnit!)
+
+// bin
+
+// FFT - try KISSFFT, later add fftw3 if fancy
+
 
 // find centre of reciprocal space index
 // check that grid is compatible with the symmetry. Ignore for now hexagonal case
