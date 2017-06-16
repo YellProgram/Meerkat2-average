@@ -468,8 +468,11 @@ public:
         return res;
     }
 
-    void FFT() {
-        int dims[] = {0,0,0};
+    void prepare_for_fft() {
+        //cut last rows and remove NANs
+
+        vector<size_t> dims(3);
+
         auto trim = [](int dim) {
             if(dim == 1)
                 return dim;
@@ -480,7 +483,28 @@ public:
         for(int i=0; i<3; ++i)
             dims[i] = trim(size[i]);
 
-        kiss_fftnd_cfg  cfg = kiss_fftnd_alloc(dims, 3, 0, NULL, NULL);
+        //trim last rows and remove nans
+        int bi = 0;
+        for(int hi = 0; hi < dims[0]; ++hi)
+            for(int ki = 0; ki < dims[1]; ++ki)
+                for(int li = 0; li < dims[2]; ++li) {
+                    auto val = at(hi, ki, li);
+                    if(!isnan(val))
+                        data[bi] = val;
+                    else
+                        data[bi] = 0;
+
+                    ++bi;
+                }
+
+        size = dims;
+        data.resize(size[0]*size[1]*size[2]);
+    }
+
+    void FFT() {
+        vector<int> dims(size.begin(), size.end());
+
+        kiss_fftnd_cfg  cfg = kiss_fftnd_alloc(dims.data(), 3, 0, NULL, NULL);
         auto new_npix = dims[0]*dims[1]*dims[2];
         vector<kiss_fft_cpx> buffer(new_npix, {0,0});
 
@@ -497,19 +521,13 @@ public:
         for(int hi = 0, hsign = signs[0]; hi < dims[0]; ++hi, hsign*=-1)
             for(int ki = 0, ksign = signs[1]; ki < dims[1]; ++ki, ksign*=-1)
                 for(int li = 0, lsign = signs[2]; li < dims[2]; ++li, lsign*=-1) {
-                    auto val = at(hi, ki, li);
-                    if(!isnan(val))
-                        buffer[bi].r = val*hsign*ksign*lsign;
-
+                    buffer[bi].r = at(hi, ki, li)*hsign*ksign*lsign;
                     ++bi;
                 }
 
         kiss_fftnd(cfg, buffer.data(), buffer.data());
 
-        data.resize(new_npix);
-
         for(int i = 0; i < 3; ++i) {
-            size[i] = dims[i];
             auto t = lower_limits[i];
             lower_limits[i] = -0.5/step_sizes[i];
             step_sizes[i] = -0.5/t;

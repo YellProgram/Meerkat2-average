@@ -80,6 +80,9 @@ int main(int argc, char* argv[]) {
         if(par.bin)
             res = res.binned(par.binning);
 
+        if(par.fft || par.trim_for_yell)
+            res.prepare_for_fft();
+
         if(par.fft)
             res.FFT();
 

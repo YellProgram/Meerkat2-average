@@ -219,6 +219,8 @@ InputParameters parse_input(const string& filename) {
             par.fft = true;
         }else if(keyword=="CENTERING")
             in >> par.centering;
+        else if(keyword=="TRIM_FOR_YELL")
+            par.trim_for_yell = true;
         else {
             throw_parser_error(filename, in, "Unknown keyword \"" + keyword + "\"");
         }
