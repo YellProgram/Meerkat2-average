@@ -10,6 +10,7 @@
 #include <assert.h>
 #include <cmath>
 #include <sstream>
+#include <tools/kiss_fftnd.h>
 
 #include "Exceptions.h"
 #include "H5Cpp.h"
@@ -178,6 +179,28 @@ struct Slice {
     {}
 };
 
+template<typename T>
+inline T median(vector<T>& inp) {
+    if(inp.size() == 0)
+        return NAN;
+
+    sort(inp.begin(), inp.end());
+    return inp[inp.size()/2];
+}
+
+template<typename T>
+inline T mean(vector<T>& inp) {
+    T sum = 0;
+    for(auto& v : inp)
+        sum += v;
+
+    return sum/inp.size();
+}
+
+inline int min(int a, size_t b) {
+    return min(a, static_cast<int> (b));
+}
+
 //const Slice Slice::ALL
 
 template<typename T>
@@ -316,7 +339,188 @@ public:
         {
             *d1 += (*d2)*scale;
         }
+    }
 
+    void punch_and_fill(double r_punch, double r_fill, const string& centering) {
+        //TODO: deal with the cases of non-cubic systems. For instance in hexagonal systems the radius will be dependent on the metric tensor.
+        //TODO: also figure out what to do in cases when pixels are different in different directions (three radii??).
+        //Will need an nd array class with slices and strides like in numpy
+        //Will need slices for Intensity Data which take care of all the lower limits and step sizes
+        //Will need distances in the metric space
+        //TODO: this code is horrific. It is not a performance bottleneck, so can be improved if virtual slice and functions for dist are introduced.
+        double eps = 1e-9;
+        auto ul = upper_limits();
+
+        int r = round(r_fill + 1);
+        int sz = 2*r+1;
+        vector<T> backgdound_pixels(sz*sz*sz);
+
+        for(int h = ceil(lower_limits[0])-1; h < ul[0]+1; ++h)
+            for(int k = ceil(lower_limits[1])-1; k < ul[1]+1; ++k)
+                for(int l = ceil(lower_limits[2])-1; l < ul[2]+1; ++l) {
+                    double hi_c = (h-lower_limits[0])/step_sizes[0];
+                    double ki_c = (k-lower_limits[1])/step_sizes[1];
+                    double li_c = (l-lower_limits[2])/step_sizes[2];
+
+                    if(centering == "F") {
+                        if(! ( abs(h%2)==abs(k%2) and abs(h%2)==abs(l%2) ))
+                            continue;
+                    }
+
+                    backgdound_pixels.resize(0);
+                    for(int dhi = -r, hi = round(hi_c)+dhi; dhi < r; ++dhi, ++hi)
+                        if(hi >= 0 && hi < size[0])
+                            for(int dki = -r, ki = round(ki_c)+dki; dki < r; ++dki, ++ki)
+                                if(ki >= 0 && ki < size[1])
+                                    for(int dli = -r, li = round(li_c)+dli; dli < r; ++dli, ++li)
+                                        if(li >= 0 && li < size[2]) {
+                                            double r = sqrt(dhi*dhi+dki*dki+dli*dli);
+                                            if(r <= r_fill && r >= r_punch) {
+                                                auto val = at(hi, ki, li);
+                                                if(! isnan(val))
+                                                    backgdound_pixels.push_back(val);
+                                            }
+                                        }
+
+                    auto fill_val = median(backgdound_pixels);
+
+                    for(int dhi = -r, hi = round(hi_c)+dhi; dhi < r; ++dhi, ++hi)
+                        if(hi >= 0 && hi < size[0])
+                            for(int dki = -r, ki = round(ki_c)+dki; dki < r; ++dki, ++ki)
+                                if(ki >= 0 && ki < size[1])
+                                    for(int dli = -r, li = round(li_c)+dli; dli < r; ++dli, ++li)
+                                        if(li >= 0 && li < size[2]) {
+                                            double r = sqrt(dhi*dhi+dki*dki+dli*dli);
+                                            if(r < r_punch) {
+                                                at(hi, ki, li) = fill_val;
+                                            }
+                                        }
+                }
+    }
+
+    vector<double> upper_limits() {
+        vector<double> res(3,0);
+        for(int i = 0; i < 3; ++i) {
+            res[i] = size[i]*step_sizes[i]+lower_limits[i];
+        }
+        return res;
+    }
+
+    vector<int> cenre_ind() {
+        vector<int> res(3);
+        for(int i = 0; i < 3; ++i)
+            res[i] = round(-lower_limits[i]/step_sizes[i]);
+
+        return res;
+    }
+
+    int ind2ind(int hi, int ki, int li) {
+        return (hi*size[1]+ki)*size[2]+li;
+    }
+
+    T& at(int hi, int ki, int li) {
+        return data[ind2ind(hi, ki, li)];
+    }
+
+    IntensityData<T> binned(vector<int> binning) {
+        vector<int> starting_indices(3);
+        vector<double> new_lower_limits(3);
+        vector<double> new_step_sizes(3);
+        vector<size_t> new_size(3);
+        for(int i = 0; i < 3; ++i) {
+            assert(binning[i] % 2 == 1);
+
+            int central_pixel_index = round(-lower_limits[i]/step_sizes[i]);
+            int available_pixels = central_pixel_index + binning[i]/2 - 1;
+            int starting_index = central_pixel_index - round(ceil(static_cast<double> (available_pixels)/binning[i])*binning[i]);
+            starting_indices[i] = starting_index;
+
+            new_lower_limits[i] = lower_limits[i]+starting_indices[i]*step_sizes[i];
+
+            int effective_pixels = size[i]-starting_indices[i];
+            new_size[i] = ceil(static_cast<double> (effective_pixels)/binning[i]);
+            new_step_sizes[i] = step_sizes[i]*binning[i];
+        }
+
+        IntensityData<T> res;
+        res.size = new_size;
+        res.lower_limits = new_lower_limits;
+        res.step_sizes = new_step_sizes;
+        res.isDirect = isDirect;
+        res.unit_cell = unit_cell;
+        res.data.resize(new_size[0]*new_size[1]*new_size[2]);
+
+        for(int hr = 0, hic = starting_indices[0]; hr < new_size[0]; ++hr, hic+=binning[0])
+            for(int kr = 0, kic = starting_indices[1]; kr < new_size[1]; ++kr, kic+=binning[1])
+                for(int lr = 0, lic = starting_indices[2]; lr < new_size[2]; ++lr, lic+=binning[2]) {
+                    T accum = 0;
+                    int Npix = 0;
+
+                    for(int hi = max(hic-binning[0]/2,0); hi < min(hic+binning[0]/2+1, size[0]); ++hi)
+                        for(int ki = max(kic-binning[1]/2,0); ki < min(kic+binning[1]/2+1, size[1]); ++ki)
+                            for(int li = max(lic-binning[2]/2,0); li < min(lic+binning[2]/2+1, size[2]); ++li) {
+                                accum += at(hi,ki,li);
+                                Npix += 1;
+                            }
+                    res.at(hr, kr, lr) += accum/Npix;
+                }
+
+        return res;
+    }
+
+    void FFT() {
+        int dims[] = {0,0,0};
+        auto trim = [](int dim) {
+            if(dim == 1)
+                return dim;
+            else
+                return dim - (dim % 2);
+        };
+
+        for(int i=0; i<3; ++i)
+            dims[i] = trim(size[i]);
+
+        kiss_fftnd_cfg  cfg = kiss_fftnd_alloc(dims, 3, 0, NULL, NULL);
+        auto new_npix = dims[0]*dims[1]*dims[2];
+        vector<kiss_fft_cpx> buffer(new_npix, {0,0});
+
+        int bi = 0;
+        vector<int> signs(3);
+        auto cen = cenre_ind();
+        transform(cen.begin(), cen.end(), signs.begin(), [](int n){
+            if(n % 2 == 0)
+                return 1;
+            else
+                return -1;
+        });
+
+        for(int hi = 0, hsign = signs[0]; hi < dims[0]; ++hi, hsign*=-1)
+            for(int ki = 0, ksign = signs[1]; ki < dims[1]; ++ki, ksign*=-1)
+                for(int li = 0, lsign = signs[2]; li < dims[2]; ++li, lsign*=-1) {
+                    auto val = at(hi, ki, li);
+                    if(!isnan(val))
+                        buffer[bi].r = val*hsign*ksign*lsign;
+
+                    ++bi;
+                }
+
+        kiss_fftnd(cfg, buffer.data(), buffer.data());
+
+        data.resize(new_npix);
+
+        for(int i = 0; i < 3; ++i) {
+            size[i] = dims[i];
+            auto t = lower_limits[i];
+            lower_limits[i] = -0.5/step_sizes[i];
+            step_sizes[i] = -0.5/t;
+            isDirect = !isDirect;
+        }
+
+        for(int hi = 0, hsign = signs[0]; hi < dims[0]; ++hi, hsign*=-1)
+            for(int ki = 0, ksign = signs[1]; ki < dims[1]; ++ki, ksign*=-1)
+                for(int li = 0, lsign = signs[2]; li < dims[2]; ++li, lsign*=-1) {
+                    at(hi,ki,li) = buffer[ind2ind(hi,ki,li)].r*hsign*ksign*lsign;
+                }
     }
 private:
 };

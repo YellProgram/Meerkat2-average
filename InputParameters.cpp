@@ -217,7 +217,8 @@ InputParameters parse_input(const string& filename) {
             in >> par.binning[0] >> par.binning[1] >> par.binning[2];
         }else if(keyword=="FFT"){
             par.fft = true;
-        }
+        }else if(keyword=="CENTERING")
+            in >> par.centering;
         else {
             throw_parser_error(filename, in, "Unknown keyword \"" + keyword + "\"");
         }

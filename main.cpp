@@ -19,7 +19,7 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
-    cout << "Meerkat-average v. 0.31" << endl;
+    cout << "Meerkat-average v. 0.35" << endl;
 
     //    ReconstructionParameters par = load_refinement_parameters(argv[1]);
 
@@ -64,8 +64,25 @@ int main(int argc, char* argv[]) {
             inp.accumulate(t, par.scales[i]);
         }
 
-        auto res = IntensityData<float>::empty(inp);
-        average(inp, res, par);
+        IntensityData<float> res;
+
+        if(par.symmetry == "1")
+            res = inp;
+        else {
+            res = IntensityData<float>::empty(inp);
+            average(inp, res, par);
+        }
+
+        if(par.punch_and_fill) {
+            res.punch_and_fill(par.r_punch, par.r_fill, par.centering);
+        }
+
+        if(par.bin)
+            res = res.binned(par.binning);
+
+        if(par.fft)
+            res.FFT();
+
         res.save(par.output_name);
 
     }catch(const FileNotFound& f_err) {

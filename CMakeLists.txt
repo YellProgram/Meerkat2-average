@@ -6,16 +6,20 @@ set(LIBHDF5_DIR lib/hdf5)
 
 set(HDF5_LIBRARIES hdf5_hl_cpp hdf5_cpp hdf5_hl hdf5 szip z )
 
-include_directories(${LIBHDF5_DIR}/include ${LIBCBF_DIR}/include lib/eigen)
+set(KISSFFT_DIR lib/kiss_fft)
+include_directories(${LIBHDF5_DIR}/include ${LIBCBF_DIR}/include lib/eigen ${KISSFFT_DIR} ${KISSFFT_DIR}/tools)
 link_directories(${LIBHDF5_DIR}/lib ${LIBCBF_DIR}/lib)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11") # -O3
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3 -mtune=native") #
 
 set(SOURCE_FILES
         InputParameters.cpp InputParameters.h Exceptions.h Symmetry.cpp Symmetry.h IntensityData.cpp IntensityData.h)
 add_library(meerkat-average-lib ${SOURCE_FILES})
+
+
+add_library(kissfft ${KISSFFT_DIR}/kiss_fft.c ${KISSFFT_DIR}/tools/kiss_fftnd.c) #
 add_executable(Meerkat2-average main.cpp)
-target_link_libraries(Meerkat2-average meerkat-average-lib libcbf.a ${HDF5_LIBRARIES})
+target_link_libraries(Meerkat2-average meerkat-average-lib libcbf.a ${HDF5_LIBRARIES} kissfft)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/lib/cxxtest/build_tools/cmake")
 find_package(CxxTest)

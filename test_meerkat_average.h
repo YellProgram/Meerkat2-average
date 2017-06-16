@@ -113,9 +113,13 @@ public:
 
 
 // TODO:
-// Add a keyword for backgrounds? not important atm
 
-// then average, implemented
+// Later
+// Add a keyword for backgrounds? not important atm
+// Average all datasets minus their backgrounds when rejecting outliers
+
+
+//TODO: change dataset size types to large INTS maybe, size_t is only until 4M which is scaringly approacheble with better computers
 
 // Remove Bragg peaks. For now a sphere will be ok rpunch:rfill, though median fill
 // Later will need some rules to which peaks not to touch (systematic absences, damnit!)

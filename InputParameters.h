@@ -38,6 +38,7 @@ struct InputParameters {
     bool bin;
     bool fft;
     vector<int> binning;
+    string centering;
 
     InputParameters() :
             reject_outliers(true),
@@ -47,7 +48,8 @@ struct InputParameters {
             r_fill(0),
             bin(false),
             binning{1,1,1},
-            fft(false)
+            fft(false),
+            centering("P")
     { };
 
     bool should_slice() {
