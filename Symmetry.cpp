@@ -54,6 +54,9 @@ vector<Matrix3i> expand_symmetry(const string& symmetry) {
         return expand_generators({el(-x, y, z),
                                   el( x,-y, z),
                                   el( x, y,-z)});
+    }else if(symmetry == "-3") {
+        return expand_generators({el(-y,x-y,z),
+                                 el(-x,-y,-z)});
     }else if(symmetry == "-1") {
         return expand_generators({el(-x, -y, -z)});
     }else if(symmetry == "1") {
@@ -64,7 +67,12 @@ vector<Matrix3i> expand_symmetry(const string& symmetry) {
     return res;
 }
 
+///Returns linear index from the
 inline size_t ind2ind(const Vector3i& r, const vector<size_t>& size,const vector<int>& centre) {
+    for(int i = 0; i < 3; ++i)
+        if(r[i]+centre[i] < 0 || r[i]+centre[i] >= size[i])
+            return std::numeric_limits<size_t>::max();
+
     return ((r[0]+centre[0])*size[1]+(r[1]+centre[1]))*size[2]+(r[2]+centre[2]);
 }
 
@@ -131,7 +139,13 @@ void average(IntensityData<float>& inp, IntensityData<float>& res, const InputPa
                               equivalent_indices.begin(),
                               [&](const Matrix3i & g) {return ind2ind(g*r, size, centre);});
 
-                    auto unique_indices_last = unique(equivalent_indices.begin(), equivalent_indices.end());
+                    //Remove elements that are outside the array. Possible in hexagonal systems and non-centered arrays
+                    auto measured_ind_end = copy_if(equivalent_indices.begin(),
+                                                    equivalent_indices.end(),
+                                                    equivalent_indices.begin(),
+                                                    [](size_t x){return x!=std::numeric_limits<size_t>::max();});
+
+                    auto unique_indices_last = unique(equivalent_indices.begin(), measured_ind_end);
 
                     //collect measured intensities
                     auto intensities_last = transform(equivalent_indices.begin(),

@@ -186,8 +186,8 @@ InputParameters parse_input(const string& filename) {
             in >> par.output_name;
         else if (keyword == "SYMMETRY") {
             in >> par.symmetry;
-            if(! isIn(par.symmetry, {"-1", "mmm", "m3m", "1"}))
-                throw_parser_error(filename, in, "Unknown symmetry\""+ par.symmetry + "\"");
+            if(! isIn(par.symmetry, {"-1", "mmm", "m3m", "1", "-3"}))
+                throw_parser_error(filename, in, "Unknown symmetry \""+ par.symmetry + "\"");
         }else if (keyword == "REJECT_OUTLIERS") {
             string user_input;
             in >> user_input;
@@ -203,6 +203,8 @@ InputParameters parse_input(const string& filename) {
             in >> par.slice[0] >> par.slice[1] >> par.slice[2] >> par.slice[3] >> par.slice[4] >> par.slice[5];
         }else if(keyword == "THRESHOLD")
             in >> par.threshold;
+        else if(keyword == "ADD_CONSTANT")
+            in >> par.add_constant;
         else if(keyword == "SCALES") {
             string inputs;
             getline(in, inputs);

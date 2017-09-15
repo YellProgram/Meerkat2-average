@@ -293,7 +293,7 @@ public:
 
         creadeAndWriteDataset<float>(file, "data", data, size);
         creadeAndWriteDataset(file, "lower_limits", lower_limits);
-        writeConstant(file, "is_direct", false);
+        writeConstant(file, "is_direct", isDirect);
         creadeAndWriteDataset(file, "step_sizes", step_sizes);
         creadeAndWriteDataset(file, "unit_cell", unit_cell);
         writeYellFormatString(file);
@@ -364,6 +364,9 @@ public:
 
                     if(centering == "F") {
                         if(! ( abs(h%2)==abs(k%2) and abs(h%2)==abs(l%2) ))
+                            continue;
+                    }else if(centering == "R") {
+                        if(! ((-h+k+l)%3 == 0))
                             continue;
                     }
 
@@ -501,6 +504,11 @@ public:
         data.resize(size[0]*size[1]*size[2]);
     }
 
+    void add_constant(double c) {
+        for(auto& v : data)
+            v+=c;
+    }
+
     void FFT() {
         vector<int> dims(size.begin(), size.end());
 
@@ -531,8 +539,8 @@ public:
             auto t = lower_limits[i];
             lower_limits[i] = -0.5/step_sizes[i];
             step_sizes[i] = -0.5/t;
-            isDirect = !isDirect;
         }
+        isDirect = !isDirect;
 
         for(int hi = 0, hsign = signs[0]; hi < dims[0]; ++hi, hsign*=-1)
             for(int ki = 0, ksign = signs[1]; ki < dims[1]; ++ki, ksign*=-1)
@@ -547,7 +555,7 @@ private:
 
 #include "Exceptions.h"
 
-
+//TODO: add all possible centering types (C, I)
 
 
 

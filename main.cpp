@@ -19,7 +19,7 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
-    cout << "Meerkat-average v. 0.35" << endl;
+    cout << "Meerkat-average v. 0.36" << endl;
 
     //    ReconstructionParameters par = load_refinement_parameters(argv[1]);
 
@@ -72,6 +72,9 @@ int main(int argc, char* argv[]) {
             res = IntensityData<float>::empty(inp);
             average(inp, res, par);
         }
+
+        if(par.add_constant != 0)
+            res.add_constant(par.add_constant);
 
         if(par.punch_and_fill) {
             res.punch_and_fill(par.r_punch, par.r_fill, par.centering);

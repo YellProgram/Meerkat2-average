@@ -40,6 +40,7 @@ struct InputParameters {
     vector<int> binning;
     string centering;
     bool trim_for_yell;
+    double add_constant;
 
     InputParameters() :
             reject_outliers(true),
@@ -51,7 +52,9 @@ struct InputParameters {
             binning{1,1,1},
             fft(false),
             centering("P"),
-            trim_for_yell(false)
+            trim_for_yell(false),
+            symmetry("1"),
+            add_constant(0)
     { };
 
     bool should_slice() {
