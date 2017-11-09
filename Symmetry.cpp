@@ -24,8 +24,11 @@ vector<Matrix3i> expand_generators(const vector<Matrix3i>& generators) {
         }
     }
 
-    auto last = unique(res.begin(), res.end());
-    res.erase(last, res.end());
+    //The whole idea of generators is such that we do not need the following:
+    //moreover, unique only removes duplicates which are adjacent which is useless
+//    auto last = unique(res.begin(), res.end());
+//    res.erase(last, res.end());
+
     return res;
 }
 
@@ -87,33 +90,64 @@ inline float mean(const vector<float>::iterator &start, const vector<float>::ite
     return average;
 }
 
+inline float sum_abs(const vector<float>::iterator &start, const vector<float>::iterator &end) {
+    float res = 0;
+    for_each(start,
+             end,
+             [&](const float& i){
+                 res += abs(i);
+             });
+
+    return res;
+}
+
+inline float linear_deviation_sum(const vector<float>::iterator &start, const vector<float>::iterator &end, float average) {
+    float res = 0;
+    for_each(start,
+             end,
+             [&](const float& i){
+                 res += abs(i - average);
+             });
+    return res;
+}
+
+inline float var(const vector<float>::iterator &start, const vector<float>::iterator &end) {
+    float res = 0;
+    for_each(start,
+             end,
+             [&](const float& inp){
+                 res += inp*inp;
+             });
+    res /= distance(start, end);
+    return res;
+}
+
 inline float median(const vector<float>::iterator &start, const vector<float>::iterator &end) {
     sort(start, end);
     auto sz = distance(start, end);
     return *(start+sz/2);
 }
 
-inline const vector<float>::iterator reject_outliers(const vector<float>::iterator & start, const vector<float>::iterator & end, float threshold) {
+inline const vector<float>::iterator reject_outliers(
+        const vector<float>::iterator & start,
+        const vector<float>::iterator & end,
+        float threshold)
+{
     auto sz = distance(start, end);
     float med = median(start, end);
 
     vector<float> differences(sz);
-    transform(start, end, differences.begin(), [&](const float& i) {return i - med;} );
+    transform(start, end, differences.begin(), [&](const float& i) {return abs(i - med);} );
 
     float median_distance = median(differences.begin(), differences.end());
 
-    return remove_if(start, end, [&](const float& i){return abs(i - med)>median_distance*threshold;});
+    return remove_if(start, end, [&](const float& i){return abs(i - med) > median_distance*threshold;});
 }
 
-inline float average_set_of_reflections(const vector<float>::iterator &equivalent_intensities,  vector<float>::iterator &intensities_last, const InputParameters& par) {
-    if(par.reject_outliers && distance(equivalent_intensities, intensities_last)>2) {
-        intensities_last = reject_outliers(equivalent_intensities, intensities_last, par.threshold);
-    }
 
-    return mean(equivalent_intensities, intensities_last);
-}
 
-void average(IntensityData<float>& inp, IntensityData<float>& res, const InputParameters& par) {
+/// Returns Rint
+float average(IntensityData<float>& inp, IntensityData<float>& res, const InputParameters& par) {
     vector<int> centre(3);
     for(int i=0; i<3; ++i) {
         centre[i] = round(-inp.lower_limits[i]/inp.step_sizes[i]);
@@ -122,6 +156,22 @@ void average(IntensityData<float>& inp, IntensityData<float>& res, const InputPa
     auto is_reconstructed = IntensityData<bool>::empty(inp);
 
     auto size = inp.size;
+
+    auto size_1d = inp.size[0]*inp.size[1]*inp.size[2];
+
+    //Assuming the additional datasets do not exist, create them
+    if(par.report_pixel_multiplicity) {
+        res.other_datasets["pixel_multiplicity"] = vector<float>(size_1d, NAN);
+    }
+    if(par.report_pixel_rint) {
+        res.other_datasets["pixel_rint"] = vector<float>(size_1d, NAN);
+    }
+    if(par.report_pixel_variance) {
+        res.other_datasets["pixel_variance"] = vector<float>(size_1d, NAN);
+    }
+
+    double accumulated_abs_I = 0;
+    double accumulated_abs_dI = 0;
 
     //TODO: check grid is ok with symmetry, or otherwise ignore the portion which is outside when reconstructing
     //TODO: rewrite this loop in a linear fashion??
@@ -133,6 +183,7 @@ void average(IntensityData<float>& inp, IntensityData<float>& res, const InputPa
         for(r(1) = -centre[1]; r(1) < (long)(size[1])-centre[1]; ++r(1))
             for(r(2) = -centre[2]; r(2) < (long)(size[2])-centre[2]; ++r(2))
                 if(!is_reconstructed.data[ind2ind(r, size, centre)]) {
+
                     //select unique indices
                     transform(symmetry_elements.begin(),
                               symmetry_elements.end(),
@@ -153,9 +204,21 @@ void average(IntensityData<float>& inp, IntensityData<float>& res, const InputPa
                                                       equivalent_intensities.begin(),
                                                       [&](const size_t& i){return inp.data[i];});
 
+                    //remove nans
                     intensities_last = remove_if(equivalent_intensities.begin(), intensities_last, isnan<float>);
 
-                    float average = average_set_of_reflections(equivalent_intensities.begin(), intensities_last, par);
+                    //reject outliers if asked
+                    if(par.reject_outliers && distance(equivalent_intensities.begin(), intensities_last)>2) {
+                        intensities_last = reject_outliers(equivalent_intensities.begin(), intensities_last, par.threshold);
+                    }
+
+                    float average = mean(equivalent_intensities.begin(), intensities_last);
+
+                    float sum_abs_I = sum_abs(equivalent_intensities.begin(), intensities_last);
+                    float sum_dI = linear_deviation_sum(equivalent_intensities.begin(), intensities_last, average);
+
+                    accumulated_abs_I += sum_abs_I;
+                    accumulated_abs_dI += sum_dI;
 
                     //put the average in correct places
                     for_each(equivalent_indices.begin(),
@@ -165,27 +228,35 @@ void average(IntensityData<float>& inp, IntensityData<float>& res, const InputPa
                                   is_reconstructed.data[i] = true;
                               });
 
-            }
+                    //save other nonsence
+                    if(par.report_pixel_multiplicity) {
+                        float multiplicity = distance(equivalent_intensities.begin(), intensities_last);
 
+                        for_each(equivalent_indices.begin(),
+                                 unique_indices_last,
+                                 [&](const size_t& i){
+                                     res.other_datasets["pixel_multiplicity"][i] = multiplicity;
+                                 });
+                    }
 
-//    for(int i = 0; i < no_files; i += chunk_dims[2]) {
-//        int tile_i;
-//        for(tile_i = i; tile_i < min(i + static_cast<int>(chunk_dims[2]), static_cast<int>(no_files)); ++tile_i) {
-//            CBFDataReader frame(argv[2 + tile_i]);
-//            frame.read_data(buffer.data() + size[1]*size[2]*(tile_i - i));
-//        }
-//
-//        hsize_t noFramesInTile = tile_i - i;
-//        hsize_t memspaceOffset[] = {0, 0, 0};
-//        hsize_t spaceCount[] = {noFramesInTile, memspaceSize[1], memspaceSize[2]};
-//        memspace.selectHyperslab(H5S_SELECT_SET, spaceCount, memspaceOffset);
-//
-//        hsize_t fspaceOffset[] = {static_cast<hsize_t>(i), 0, 0};
-//        fspace.selectHyperslab(H5S_SELECT_SET, spaceCount, fspaceOffset);
-//
-//        dataset.write(buffer.data(), PredType::NATIVE_INT32, memspace, fspace);
-//    }
+                    if(par.report_pixel_rint) {
+                        for_each(equivalent_indices.begin(),
+                                 unique_indices_last,
+                                 [&](const size_t& i){
+                                     res.other_datasets["pixel_rint"][i] = sum_dI/sum_abs_I;
+                                 });
+                    }
+                    if(par.report_pixel_variance) {
+                        float variance = var(equivalent_intensities.begin(), intensities_last);
 
+                        for_each(equivalent_indices.begin(),
+                                 unique_indices_last,
+                                 [&](const size_t& i){
+                                     res.other_datasets["pixel_variance"][i] = variance;
+                                 });
+                    }
+                }
 
+    return accumulated_abs_dI/accumulated_abs_I;
 }
 

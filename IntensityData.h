@@ -11,6 +11,7 @@
 #include <cmath>
 #include <sstream>
 #include <tools/kiss_fftnd.h>
+#include <map>
 
 #include "Exceptions.h"
 #include "H5Cpp.h"
@@ -206,7 +207,9 @@ inline int min(int a, size_t b) {
 template<typename T>
 class IntensityData {
 public:
-    IntensityData() {}
+    IntensityData():
+            Rint(NAN)
+    {}
 
     static inline IntensityData<T> read(const string& filename, const Slice& slice) {
         IntensityData<T> res;
@@ -288,15 +291,30 @@ public:
         return res;
     }
 
-     void save(string filename) {
+    template<typename T2>
+    void saveData(string filename, vector<T2>& dataset) {
         H5File file( filename, H5F_ACC_TRUNC );
 
-        creadeAndWriteDataset<float>(file, "data", data, size);
+        creadeAndWriteDataset<float>(file, "data", dataset, size);
         creadeAndWriteDataset(file, "lower_limits", lower_limits);
         writeConstant(file, "is_direct", isDirect);
+        if(!isnan(Rint))
+            writeConstant(file, "Rint", Rint);
+
         creadeAndWriteDataset(file, "step_sizes", step_sizes);
         creadeAndWriteDataset(file, "unit_cell", unit_cell);
         writeYellFormatString(file);
+    }
+
+    void save(string filename) {
+        saveData(filename, data);
+
+        for(auto& it : other_datasets) {
+            auto pos_extension = filename.find(".");
+            auto prefix = filename.substr(0,pos_extension);
+            auto out_filename = prefix + "_" + it.first + ".h5";
+            saveData(out_filename, it.second);
+        }
     }
 
     template<typename T2>
@@ -328,6 +346,8 @@ public:
     vector<double> step_sizes;
 //    vector<vector<double> > metric_tensor;
     vector<double> unit_cell;
+    map<string, vector<float>> other_datasets;
+    float Rint;
 
     void scale(double sc) {
         for(auto& d : data)

@@ -156,6 +156,19 @@ string to_lower(const string& inp) {
     return res;
 }
 
+bool parse_bool(ifstream& in, string filename) {
+    string user_input;
+    in >> user_input;
+    string user_input_l = to_lower(user_input);
+    if(user_input_l == "true" || user_input_l == "1" || user_input_l == "yes")
+        return true;
+    else if(user_input_l == "false" || user_input_l == "0" || user_input_l == "no")
+        return false;
+    else
+        throw_parser_error(filename, in, "Unexpected value\""+ user_input + "\"");
+
+    return false;
+}
 
 InputParameters parse_input(const string& filename) {
     ifstream in(filename);
@@ -189,15 +202,7 @@ InputParameters parse_input(const string& filename) {
             if(! isIn(par.symmetry, {"-1", "mmm", "m3m", "1", "-3"}))
                 throw_parser_error(filename, in, "Unknown symmetry \""+ par.symmetry + "\"");
         }else if (keyword == "REJECT_OUTLIERS") {
-            string user_input;
-            in >> user_input;
-            string user_input_l = to_lower(user_input);
-            if(user_input_l == "true" || user_input_l == "1" || user_input_l == "yes")
-                par.reject_outliers = true;
-            else if(user_input_l == "false" || user_input_l == "0" || user_input_l == "no")
-                par.reject_outliers = false;
-            else
-                throw_parser_error(filename, in, "Unexpected value\""+ user_input + "\"");
+            par.reject_outliers = parse_bool(in, filename);
         }else if(keyword == "SLICE"){
             par.slice = vector<float>(6,0);
             in >> par.slice[0] >> par.slice[1] >> par.slice[2] >> par.slice[3] >> par.slice[4] >> par.slice[5];
@@ -205,6 +210,12 @@ InputParameters parse_input(const string& filename) {
             in >> par.threshold;
         else if(keyword == "ADD_CONSTANT")
             in >> par.add_constant;
+        else if(keyword == "REPORT_PIXEL_RINT")
+            par.report_pixel_rint = parse_bool(in, filename);
+        else if(keyword == "REPORT_PIXEL_VARIANCE")
+            par.report_pixel_variance = parse_bool(in, filename);
+        else if(keyword == "REPORT_PIXEL_MULTIPLICITY")
+            par.report_pixel_multiplicity = parse_bool(in, filename);
         else if(keyword == "SCALES") {
             string inputs;
             getline(in, inputs);
@@ -227,14 +238,13 @@ InputParameters parse_input(const string& filename) {
             throw_parser_error(filename, in, "Unknown keyword \"" + keyword + "\"");
         }
 
-        //minor problem if file ends exactly with the last value, then this error fires
+        //Minor problem if file ends exactly with the last value, then this error fires
         if(reached_eof(in)) {
             throw_parser_error(filename, in, "Unexpected end of file");
         }
         else if(failed(in)) {
             throw_parser_error(filename, in, "Incorrect arguments to keyword \"" + keyword + "\"");
         }
-
     }
 
     return par;

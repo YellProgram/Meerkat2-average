@@ -41,6 +41,10 @@ struct InputParameters {
     string centering;
     bool trim_for_yell;
     double add_constant;
+    bool report_pixel_rint;
+    bool report_pixel_variance;
+    bool report_pixel_multiplicity;
+
 
     InputParameters() :
             reject_outliers(true),
@@ -54,7 +58,10 @@ struct InputParameters {
             centering("P"),
             trim_for_yell(false),
             symmetry("1"),
-            add_constant(0)
+            add_constant(0),
+            report_pixel_rint(false),
+            report_pixel_variance(false),
+            report_pixel_multiplicity(false)
     { };
 
     bool should_slice() {

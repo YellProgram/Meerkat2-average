@@ -19,12 +19,23 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
-    cout << "Meerkat-average v. 0.36" << endl;
+    cout << "Meerkat-average v. 0.37" << endl;
 
     //    ReconstructionParameters par = load_refinement_parameters(argv[1]);
 
     try {
         InputParameters par = parse_input(argv[1]);
+
+        //TODO: do proper averaging when more than one dataset is available. In such a case outlier rejection maybe probably should be working on the level of different datasets. And for sure, the Rint should be showing that
+
+        //punch_and_fill, bin, fft, trim_for_yell
+        if( par.report_pixel_variance || par.report_pixel_rint || par.report_pixel_multiplicity) {
+            if( par.punch_and_fill || par.bin || par.fft || par.trim_for_yell )
+                throw ParserError("Incorrect settings:\n Currently Meerkat-average can only report pixel-wise variance, Rint and multiplicity in the case of simple reconstruction. The values cannot be propagated to later stages like binning, trimming or FFT");
+            if( par.input_files.size() > 1)
+                throw ParserError("Incorrect settings:\n Currently Meerkat-average van only report pixel-wise variance, Rint and multiplicity if only one dataset is being averaged at the same time");
+        }
+
 
         cout << "Averaging datasets: " << endl;
         for(const auto& s : par.input_files)
@@ -70,7 +81,15 @@ int main(int argc, char* argv[]) {
             res = inp;
         else {
             res = IntensityData<float>::empty(inp);
-            average(inp, res, par);
+            auto Rint = average(inp, res, par);
+
+            if(par.input_files.size() == 1) {
+                cout << "Averaging finished, Rint = " << Rint << endl;
+            } else {
+                //otherwise the Rint is nonsence, so flag it should not be  reported to neither console nor the  .h5 file.
+                res.Rint = NAN;
+            }
+
         }
 
         if(par.add_constant != 0)
