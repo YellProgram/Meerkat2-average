@@ -199,7 +199,8 @@ InputParameters parse_input(const string& filename) {
             in >> par.output_name;
         else if (keyword == "SYMMETRY") {
             in >> par.symmetry;
-            if(! isIn(par.symmetry, {"-1", "mmm", "m3m", "1", "-3"}))
+            if(! isIn(par.symmetry, {"-1", "mmm", "m-3m", "1", "-3","2/m:b", "2/m:c",
+                                     "4/m", "4/mmm", "6/m", "6/mmm", "m-3", "-3:H", "-3:R", "-3m:R", "-3m:H"}))
                 throw_parser_error(filename, in, "Unknown symmetry \""+ par.symmetry + "\"");
         }else if (keyword == "REJECT_OUTLIERS") {
             par.reject_outliers = parse_bool(in, filename);

@@ -5,7 +5,7 @@
 #include <iostream>
 #include "Symmetry.h"
 #include "InputParameters.h"
-
+#include <set>
 
 vector<Matrix3i> expand_generators(const vector<Matrix3i>& generators) {
 
@@ -46,20 +46,61 @@ vector<Matrix3i> expand_symmetry(const string& symmetry) {
     y << 0,1,0;
     z << 0,0,1;
 
-    if (symmetry=="m3m") {
+
+    if (symmetry=="m-3m") {
         return expand_generators({el(-x, y, z),
                                   el( x,-y, z),
                                   el( x, y,-z),
                                   el( y, z, x),
                                   el( y, x, z),
                                   el(-y, x, z)});
+    }else if (symmetry=="m-3") {
+        return expand_generators({el(-x,-y, z),
+                                  el( -x,y,-z),
+                                  el( z, x, y),
+                                  el(-x,-y,-z)});
+    }else if (symmetry=="4/mmm") {
+        return expand_generators({el(-x,-y, z),
+                                  el(-y, x, z),
+                                  el(-x, y,-z),
+                                  el(-x,-y,-z)});
+    }else if (symmetry=="4/m") {
+        return expand_generators({el(-x,-y, z),
+                                  el(-y, x, z),
+                                  el(-x,-y,-z)});
     }else if(symmetry == "mmm") {
         return expand_generators({el(-x, y, z),
                                   el( x,-y, z),
                                   el( x, y,-z)});
-    }else if(symmetry == "-3") {
+    }else if(symmetry == "6/mmm") {
+        return expand_generators({el(-y,x-y,z),
+                                  el(-x,-y,z),
+                                  el(y,x,-z),
+                                  el(-x,-y,-z)});
+    }else if(symmetry == "6/m") {
+        return expand_generators({el(-y,x-y,z),
+                                  el(-x,-y,z),
+                                  el(-x,-y,-z)});
+    }else if(symmetry == "-3:H") {
         return expand_generators({el(-y,x-y,z),
                                  el(-x,-y,-z)});
+    }else if(symmetry == "-3:R") {
+        return expand_generators({el(z,x,y),
+                                  el(-x,-y,-z)});
+    }else if(symmetry == "-3m:H") {
+        return expand_generators({el(-y,x-y,z),
+                                  el( y, x,-z),
+                                  el(-x,-y,-z)});
+    }else if(symmetry == "-3m:R") {
+        return expand_generators({el(z,x,y),
+                                  el(-z,-y,-x),
+                                  el(-x,-y,-z)});
+    }else if(symmetry == "2/m:b") {
+        return expand_generators({el(-x, y,-z),
+                                  el(-x,-y,-z)});
+    }else if(symmetry == "2/m:c") {
+        return expand_generators({el(-x,-y, z),
+                                  el(-x,-y,-z)});
     }else if(symmetry == "-1") {
         return expand_generators({el(-x, -y, -z)});
     }else if(symmetry == "1") {
@@ -178,6 +219,8 @@ float average(IntensityData<float>& inp, IntensityData<float>& res, const InputP
     vector<Matrix3i> symmetry_elements = expand_symmetry(par.symmetry);
     vector<size_t> equivalent_indices(symmetry_elements.size());
     vector<float> equivalent_intensities(symmetry_elements.size());
+    set<size_t> unique_indices;
+
     Vector3i r;
     for(r(0) = -centre[0]; r(0) < (long)(size[0])-centre[0]; ++r(0))
         for(r(1) = -centre[1]; r(1) < (long)(size[1])-centre[1]; ++r(1))
@@ -196,11 +239,14 @@ float average(IntensityData<float>& inp, IntensityData<float>& res, const InputP
                                                     equivalent_indices.begin(),
                                                     [](size_t x){return x!=std::numeric_limits<size_t>::max();});
 
-                    auto unique_indices_last = unique(equivalent_indices.begin(), measured_ind_end);
+//                    auto unique_indices_last = unique(equivalent_indices.begin(), measured_ind_end);
+                    unique_indices.clear();
+                    unique_indices.insert(equivalent_indices.begin(), measured_ind_end);
+
 
                     //collect measured intensities
-                    auto intensities_last = transform(equivalent_indices.begin(),
-                                                      unique_indices_last,
+                    auto intensities_last = transform(unique_indices.begin(),
+                                                      unique_indices.end(),
                                                       equivalent_intensities.begin(),
                                                       [&](const size_t& i){return inp.data[i];});
 
@@ -221,8 +267,8 @@ float average(IntensityData<float>& inp, IntensityData<float>& res, const InputP
                     accumulated_abs_dI += sum_dI;
 
                     //put the average in correct places
-                    for_each(equivalent_indices.begin(),
-                              unique_indices_last,
+                    for_each(unique_indices.begin(),
+                             unique_indices.end(),
                               [&](const size_t& i){
                                   res.data[i] = average;
                                   is_reconstructed.data[i] = true;
@@ -232,16 +278,16 @@ float average(IntensityData<float>& inp, IntensityData<float>& res, const InputP
                     if(par.report_pixel_multiplicity) {
                         float multiplicity = distance(equivalent_intensities.begin(), intensities_last);
 
-                        for_each(equivalent_indices.begin(),
-                                 unique_indices_last,
+                        for_each(unique_indices.begin(),
+                                 unique_indices.end(),
                                  [&](const size_t& i){
                                      res.other_datasets["pixel_multiplicity"][i] = multiplicity;
                                  });
                     }
 
                     if(par.report_pixel_rint) {
-                        for_each(equivalent_indices.begin(),
-                                 unique_indices_last,
+                        for_each(unique_indices.begin(),
+                                 unique_indices.end(),
                                  [&](const size_t& i){
                                      res.other_datasets["pixel_rint"][i] = sum_dI/sum_abs_I;
                                  });
@@ -249,8 +295,8 @@ float average(IntensityData<float>& inp, IntensityData<float>& res, const InputP
                     if(par.report_pixel_variance) {
                         float variance = var(equivalent_intensities.begin(), intensities_last);
 
-                        for_each(equivalent_indices.begin(),
-                                 unique_indices_last,
+                        for_each(unique_indices.begin(),
+                                 unique_indices.end(),
                                  [&](const size_t& i){
                                      res.other_datasets["pixel_variance"][i] = variance;
                                  });
