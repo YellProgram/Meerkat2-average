@@ -70,7 +70,7 @@ public:
     }
 
     void test_data_io() {
-        auto inp = IntensityData<float>::read("test.h5");
+        auto inp = IntensityData<float>::read("test.h5", Slice());
         TS_ASSERT_EQUALS(10, inp.size[0]);
         TS_ASSERT_EQUALS(11, inp.size[1]);
         TS_ASSERT_EQUALS(12, inp.size[2]);
@@ -81,7 +81,7 @@ public:
 
         inp.save("test-out.h5");
 
-        inp = IntensityData<float>::read("test-out.h5");
+        inp = IntensityData<float>::read("test-out.h5", Slice());
         TS_ASSERT_EQUALS(10, inp.size[0]);
         TS_ASSERT_EQUALS(11, inp.size[1]);
         TS_ASSERT_EQUALS(12, inp.size[2]);
@@ -92,9 +92,11 @@ public:
     }
 
     void test_run_averaging() {
-        auto inp = IntensityData<float>::read("visual-test.h5");
+        auto inp = IntensityData<float>::read("visual-test.h5", Slice());
         auto res = IntensityData<float>::empty(inp);
-        average(inp, res, "m3m", InputParameters());
+        auto par = InputParameters();
+        par.symmetry = "m-3m";
+        average(inp, res, InputParameters());
         res.save("visual-test-out.h5");
     }
 // GOT:
