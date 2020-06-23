@@ -446,6 +446,11 @@ public:
     }
 
     IntensityData<T> binned(vector<int> binning) {
+        
+        //TODO: check with reconstruciton -10 10 -10 10 -10 10   601 601 601 binning 5 5 5 - it adds extrarow of voxels to the left so new ll is -10.166666668
+        //TODO: above is a bug. fix it
+        
+        
         vector<int> starting_indices(3);
         vector<double> new_lower_limits(3);
         vector<double> new_step_sizes(3);
@@ -458,9 +463,9 @@ public:
             int starting_index = central_pixel_index - round(ceil(static_cast<double> (available_pixels)/binning[i])*binning[i]);
             starting_indices[i] = starting_index;
 
-            new_lower_limits[i] = lower_limits[i]+starting_indices[i]*step_sizes[i];
+            new_lower_limits[i] = lower_limits[i] + starting_indices[i]*step_sizes[i];
 
-            int effective_pixels = size[i]-starting_indices[i];
+            int effective_pixels = size[i] - starting_indices[i];
             new_size[i] = ceil(static_cast<double> (effective_pixels)/binning[i]);
             new_step_sizes[i] = step_sizes[i]*binning[i];
         }
