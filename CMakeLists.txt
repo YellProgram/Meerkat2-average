@@ -16,7 +16,6 @@ set(SOURCE_FILES
         InputParameters.cpp InputParameters.h Exceptions.h Symmetry.cpp Symmetry.h IntensityData.cpp IntensityData.h)
 add_library(meerkat-average-lib ${SOURCE_FILES})
 
-
 add_library(kissfft ${KISSFFT_DIR}/kiss_fft.c ${KISSFFT_DIR}/tools/kiss_fftnd.c) #
 add_executable(Meerkat2-average main.cpp)
 target_link_libraries(Meerkat2-average meerkat-average-lib libcbf.a ${HDF5_LIBRARIES} kissfft)

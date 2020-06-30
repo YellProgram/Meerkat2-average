@@ -367,7 +367,9 @@ public:
         //Will need an nd array class with slices and strides like in numpy
         //Will need slices for Intensity Data which take care of all the lower limits and step sizes
         //Will need distances in the metric space
-        //TODO: this code is horrific. It is not a performance bottleneck, so can be improved if virtual slice and functions for dist are introduced.
+        //TODO: this code is not very beautiful. It is not a performance bottleneck, so can be improved if virtual slice and functions for dist are introduced.
+
+        //TODO: fix a bug do not fill in regions which were nans
         double eps = 1e-9;
         auto ul = upper_limits();
 
