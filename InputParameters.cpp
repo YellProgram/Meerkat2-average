@@ -95,14 +95,6 @@ ContextAroundPosition get_context(istream& in) {
     return ContextAroundPosition{lines_before.str(), current_line, lines_after.str(), position_within_current_line, current_line_no, context.str()};
 }
 
-bool reached_eof(const istream& in) {
-    return in.rdstate() & istream::eofbit;
-}
-
-bool failed(const istream& in) {
-    return in.rdstate() & (istream::badbit | istream::failbit);
-}
-
 string throw_parser_error(const string& filename, istream& in,const string& description) {
     ostringstream err_text;
     auto ctx = get_context(in);
@@ -182,7 +174,7 @@ InputParameters parse_input(const string& filename) {
 
     while (!in.eof()) {
         in >> keyword;
-        if (reached_eof(in))
+        if (in.eof())
             break;
 
         if (keyword[0] == '!' or keyword[0] == '#') {
@@ -240,10 +232,10 @@ InputParameters parse_input(const string& filename) {
         }
 
         //Minor problem if file ends exactly with the last value, then this error fires
-        if(reached_eof(in)) {
+        if(in.fail() && in.eof()) {
             throw_parser_error(filename, in, "Unexpected end of file");
         }
-        else if(failed(in)) {
+        else if(in.fail()) {
             throw_parser_error(filename, in, "Incorrect arguments to keyword \"" + keyword + "\"");
         }
     }

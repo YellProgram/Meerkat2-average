@@ -1,0 +1,6 @@
+INPUTS something.h5 something_else.h5
+OUTPUT output.h5
+SYMMETRY m-3m
+
+REJECT_OUTLIERS False
+THRESHOLD 5.7

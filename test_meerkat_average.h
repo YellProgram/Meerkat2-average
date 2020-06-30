@@ -57,13 +57,13 @@ public:
         TS_ASSERT_EQUALS(false, par.reject_outliers);
         TS_ASSERT_DELTA(5.7, par.threshold, eps);
         TS_ASSERT_EQUALS("something_else.h5", par.input_files[1]);
-        TS_ASSERT_EQUALS("m3m", par.symmetry);
+        TS_ASSERT_EQUALS("m-3m", par.symmetry);
         TS_ASSERT_EQUALS("output.h5", par.output_name);
     }
 
 
     void test_expand_symmetry() {
-        TS_ASSERT_EQUALS(48, expand_symmetry("m3m").size());
+        TS_ASSERT_EQUALS(48, expand_symmetry("m-3m").size());
         TS_ASSERT_EQUALS(8, expand_symmetry("mmm").size());
         TS_ASSERT_EQUALS(2, expand_symmetry("-1").size());
         TS_ASSERT_EQUALS(1, expand_symmetry("1").size());
