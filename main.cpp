@@ -19,7 +19,7 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
-    cout << "Meerkat-average v. 0.37" << endl;
+    cout << "Meerkat-average v. 0.38" << endl;
 
     //    ReconstructionParameters par = load_refinement_parameters(argv[1]);
 

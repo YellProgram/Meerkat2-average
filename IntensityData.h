@@ -42,7 +42,7 @@ inline DataType getH5Type<float> () {
 }
 
 template<typename A, hsize_t Nx, hsize_t Ny>
-vector<vector<A> > readMatrix(H5File f, const string& datasetName) {
+vector<vector<A> > readMatrix(H5File& f, const string& datasetName) {
     DataSet dataset = f.openDataSet(datasetName);
 
     DataSpace dataspace = dataset.getSpace();
@@ -63,7 +63,7 @@ vector<vector<A> > readMatrix(H5File f, const string& datasetName) {
 }
 
 template<typename A, hsize_t datasetSize>
-vector<A> readVector(H5File f, const string& datasetName) {
+vector<A> readVector(H5File& f, const string& datasetName) {
     DataSet dataset = f.openDataSet(datasetName);
 
     DataSpace dataspace = dataset.getSpace();
@@ -75,12 +75,12 @@ vector<A> readVector(H5File f, const string& datasetName) {
 
     A out[datasetSize];
     dataset.read( out, getH5Type<A>());
-
-    return vector<A>(begin(out),end(out));
+    vector<A>result (begin(out), end(out));
+    return result;
 }
 
 template<typename A>
-A readConstant(H5File f, const string& datasetName) {
+A readConstant(H5File& f, const string& datasetName) {
     //Due to (probably) bug, dataset.read overwrites two values for a scalar
     //don't have time to trace it
     A res[2];
@@ -229,7 +229,8 @@ public:
         res.isDirect = readConstant<bool>(dataFile, "is_direct");
         res.unit_cell = readVector<double, 6>(dataFile, "unit_cell");
 
-        res.lower_limits = readVector<double,3>(dataFile,"lower_limits");
+        res.lower_limits = readVector<double, 3>(dataFile,"lower_limits"); //TODO: fix bug with returns here. They do not run with -O2 or -O3 flags
+
         res.step_sizes = readVector<double, 3>(dataFile, "step_sizes");
 
         DataSet data = dataFile.openDataSet("data");
@@ -239,7 +240,7 @@ public:
 
         //SLICE HERE
         if(slice.everything) {
-            res.data = readVector<float>(dataFile, "data");
+            res.data = readVector<T>(dataFile, "data");
         }
         else{
             vector<int> start_pixels(3,0);
@@ -288,6 +289,9 @@ public:
 
 //    metricTensor = metricTensorFromUnitCell(unitCell, !isDirect);
 //        DSetCreatPropList cparms = data.getCreatePlist();
+
+        
+        assert(res.lower_limits.size()==3); //for debug purposes. TODO: remove after teh bug with lower_limits is fixed
         return res;
     }
 
@@ -373,7 +377,7 @@ public:
         double eps = 1e-9;
         auto ul = upper_limits();
 
-        int r = round(r_fill + 1);
+        int r = round(max(r_fill,r_punch) + 1);
         int sz = 2*r+1;
         vector<T> backgdound_pixels(sz*sz*sz);
 
@@ -390,14 +394,23 @@ public:
                     }else if(centering == "R") {
                         if(! ((-h+k+l)%3 == 0))
                             continue;
-                    }
+                    }else if(centering == "C") {
+                      if(! ((h+k) % 2 == 0))
+                        continue;
+                    }else if(centering == "B") {
+                        if(! ((h+l) % 2 == 0))
+                            continue;
+                    }else if(centering == "A") {
+                        if(! ((k+l) % 2 == 0))
+                            continue;
+                    } //TODO: add checks for unknown centerings. Need R reverse and obverse? probably not
 
                     backgdound_pixels.resize(0);
-                    for(int dhi = -r, hi = round(hi_c)+dhi; dhi < r; ++dhi, ++hi)
+                    for(int dhi = -r, hi = round(hi_c)+dhi; dhi <= r; ++dhi, ++hi)
                         if(hi >= 0 && hi < size[0])
-                            for(int dki = -r, ki = round(ki_c)+dki; dki < r; ++dki, ++ki)
+                            for(int dki = -r, ki = round(ki_c)+dki; dki <= r; ++dki, ++ki)
                                 if(ki >= 0 && ki < size[1])
-                                    for(int dli = -r, li = round(li_c)+dli; dli < r; ++dli, ++li)
+                                    for(int dli = -r, li = round(li_c)+dli; dli <= r; ++dli, ++li)
                                         if(li >= 0 && li < size[2]) {
                                             double r = sqrt(dhi*dhi+dki*dki+dli*dli);
                                             if(r <= r_fill && r >= r_punch) {
@@ -409,13 +422,13 @@ public:
 
                     auto fill_val = median(backgdound_pixels);
 
-                    for(int dhi = -r, hi = round(hi_c)+dhi; dhi < r; ++dhi, ++hi)
+                    for(int dhi = -r, hi = round(hi_c)+dhi; dhi <= r; ++dhi, ++hi)
                         if(hi >= 0 && hi < size[0])
-                            for(int dki = -r, ki = round(ki_c)+dki; dki < r; ++dki, ++ki)
+                            for(int dki = -r, ki = round(ki_c)+dki; dki <= r; ++dki, ++ki)
                                 if(ki >= 0 && ki < size[1])
-                                    for(int dli = -r, li = round(li_c)+dli; dli < r; ++dli, ++li)
+                                    for(int dli = -r, li = round(li_c)+dli; dli <= r; ++dli, ++li)
                                         if(li >= 0 && li < size[2]) {
-                                            double r = sqrt(dhi*dhi+dki*dki+dli*dli);
+                                            double r = sqrt(dhi*dhi+dki*dki+dli*dli); //TODO: replace this with proper distance in reciprocal angstroems
                                             if(r < r_punch) {
                                                 at(hi, ki, li) = fill_val;
                                             }

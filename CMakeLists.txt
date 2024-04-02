@@ -10,7 +10,9 @@ set(KISSFFT_DIR lib/kiss_fft)
 include_directories(${LIBHDF5_DIR}/include ${LIBCBF_DIR}/include lib/eigen ${KISSFFT_DIR} ${KISSFFT_DIR}/tools)
 link_directories(${LIBHDF5_DIR}/lib ${LIBCBF_DIR}/lib)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -mtune=native -O3") #
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -mtune=native -O1") #-mtune=native -O1
+
+
 
 set(SOURCE_FILES
         InputParameters.cpp InputParameters.h Exceptions.h Symmetry.cpp Symmetry.h IntensityData.cpp IntensityData.h)

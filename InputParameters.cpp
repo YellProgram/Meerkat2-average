@@ -182,7 +182,15 @@ InputParameters parse_input(const string& filename) {
             continue;
         }
 
+        //TODO: make a gentle warning when input parameter is .h5 and not text
+
+//TODO: Complain if unit cell in hexagonal system, or in any other system really is not compatible
+//with the angles in the input file
+//not just average
+
         if (keyword == "INPUTS") {
+        ////TODO: here remove bugs. Split names not by ' ' but by '\s'. trim string before doing so
+        //possibly also by "some long pathname" and 'some long pathname', forget escapes for now
             string inputs;
             getline(in, inputs);
             par.input_files = split(inputs, ' ');
@@ -191,7 +199,7 @@ InputParameters parse_input(const string& filename) {
             in >> par.output_name;
         else if (keyword == "SYMMETRY") {
             in >> par.symmetry;
-            if(! isIn(par.symmetry, {"-1", "mmm", "m-3m", "1", "-3","2/m:b", "2/m:c",
+            if(! isIn(par.symmetry, {"-1", "mmm", "m-3m", "1", "-3", "2/m:b", "2/m:c",
                                      "4/m", "4/mmm", "6/m", "6/mmm", "m-3", "-3:H", "-3:R", "-3m:R", "-3m:H"}))
                 throw_parser_error(filename, in, "Unknown symmetry \""+ par.symmetry + "\"");
         }else if (keyword == "REJECT_OUTLIERS") {
@@ -210,6 +218,7 @@ InputParameters parse_input(const string& filename) {
         else if(keyword == "REPORT_PIXEL_MULTIPLICITY")
             par.report_pixel_multiplicity = parse_bool(in, filename);
         else if(keyword == "SCALES") {
+            //TODO: here remove bugs. Split names not by ' ' but by '\s'. trim string before doing so
             string inputs;
             getline(in, inputs);
             auto t = split(inputs, ' ');

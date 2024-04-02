@@ -52,8 +52,7 @@ vector<Matrix3i> expand_symmetry(const string& symmetry) {
                                   el( x,-y, z),
                                   el( x, y,-z),
                                   el( y, z, x),
-                                  el( y, x, z),
-                                  el(-y, x, z)});
+                                  el( y, x, z)});
     }else if (symmetry=="m-3") {
         return expand_generators({el(-x,-y, z),
                                   el( -x,y,-z),

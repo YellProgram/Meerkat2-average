@@ -67,6 +67,7 @@ public:
         TS_ASSERT_EQUALS(8, expand_symmetry("mmm").size());
         TS_ASSERT_EQUALS(2, expand_symmetry("-1").size());
         TS_ASSERT_EQUALS(1, expand_symmetry("1").size());
+        //TODO: test all other symmetry elements. At least the number of symmetry elemens should be correct.
     }
 
     void test_data_io() {
@@ -75,9 +76,11 @@ public:
         TS_ASSERT_EQUALS(11, inp.size[1]);
         TS_ASSERT_EQUALS(12, inp.size[2]);
 
-        TS_ASSERT_DELTA(-1, inp.lower_limits[0], eps);
-        TS_ASSERT_DELTA(-2, inp.lower_limits[1], eps);
-        TS_ASSERT_DELTA(-3, inp.lower_limits[2], eps);
+        TS_ASSERT_EQUALS(3, inp.lower_limits.size());
+
+        TS_ASSERT_DELTA(-1, inp.lower_limits.at(0), eps);
+        TS_ASSERT_DELTA(-2, inp.lower_limits.at(1), eps);
+        TS_ASSERT_DELTA(-3, inp.lower_limits.at(2), eps);
 
         inp.save("test-out.h5");
 
