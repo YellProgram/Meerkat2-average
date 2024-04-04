@@ -6,6 +6,7 @@
 #include "Symmetry.h"
 #include "InputParameters.h"
 #include <set>
+#include <algorithm>
 
 vector<Matrix3i> expand_generators(const vector<Matrix3i>& generators) {
 
