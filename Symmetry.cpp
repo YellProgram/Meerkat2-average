@@ -6,7 +6,6 @@
 #include "Symmetry.h"
 #include "InputParameters.h"
 #include <set>
-#include <algorithm>
 
 vector<Matrix3i> expand_generators(const vector<Matrix3i>& generators) {
 
@@ -187,7 +186,7 @@ inline const vector<float>::iterator reject_outliers(
 
 inline bool fisnan(float x) {
     //Helping with type deduction
-    return isnan<float>(x);
+    return isnan(x);
 }
 
 /// Returns Rint
