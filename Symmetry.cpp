@@ -185,7 +185,10 @@ inline const vector<float>::iterator reject_outliers(
     return remove_if(start, end, [&](const float& i){return abs(i - med) > median_distance*threshold;});
 }
 
-
+inline bool fisnan(float x) {
+    //Helping with type deduction
+    return isnan<float>(x);
+}
 
 /// Returns Rint
 float average(IntensityData<float>& inp, IntensityData<float>& res, const InputParameters& par) {
@@ -251,7 +254,7 @@ float average(IntensityData<float>& inp, IntensityData<float>& res, const InputP
                                                       [&](const size_t& i){return inp.data[i];});
 
                     //remove nans
-                    intensities_last = remove_if(equivalent_intensities.begin(), intensities_last, isnan<float>);
+                    intensities_last = remove_if(equivalent_intensities.begin(), intensities_last, fisnan);
 
                     //reject outliers if asked
                     if(par.reject_outliers && distance(equivalent_intensities.begin(), intensities_last)>2) {
