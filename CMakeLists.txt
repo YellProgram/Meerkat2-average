@@ -21,7 +21,7 @@ DownloadHDF5For(meerkat-average-lib)
 
 add_library(kissfft ${KISSFFT_DIR}/kiss_fft.c ${KISSFFT_DIR}/tools/kiss_fftnd.c) #
 add_executable(Meerkat2-average main.cpp)
-target_link_libraries(Meerkat2-average meerkat-average-lib  kissfft)
+target_link_libraries(meerkat2-average meerkat-average-lib  kissfft)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/lib/cxxtest/build_tools/cmake")
 find_package(CxxTest)

@@ -390,6 +390,9 @@ public:
                     if(centering == "F") {
                         if(! ( abs(h%2)==abs(k%2) and abs(h%2)==abs(l%2) ))
                             continue;
+                    }else if(centering == "I") {
+                        if(! ((h+k+l)%2 == 0))
+                            continue;
                     }else if(centering == "R") {
                         if(! ((-h+k+l)%3 == 0))
                             continue;
