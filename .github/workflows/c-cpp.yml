@@ -9,7 +9,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-latest] #, windows-latest
+        os: [ubuntu-latest, windows-latest] #,
 
 
     runs-on: ${{ matrix.os }}
@@ -41,13 +41,13 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       with:
         name: meerkat2-average-linux
-        path: meerkat2-average-build/meerkat2-average
+        path: meerkat2-average-build/Meerkat2-average
 
     - name: Upload compiled file windows
       uses: actions/upload-artifact@v4
       if: matrix.os == 'windows-latest'
       with:
         name: meerkat2-average.exe
-        path: meerkat2-average-build/meerkat2-average.exe
+        path: meerkat2-average-build/Meerkat2-average.exe
 
 
