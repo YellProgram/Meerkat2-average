@@ -7,7 +7,7 @@ project(Meerkat2-average)
 
 include(cmake/hdf5.cmake)
 
-set (CMAKE_CXX_STANDARD 14)
+set (CMAKE_CXX_STANDARD 17)
 
 set(KISSFFT_DIR lib/kiss_fft)
 include_directories(lib/eigen ${KISSFFT_DIR} ${KISSFFT_DIR}/tools)
