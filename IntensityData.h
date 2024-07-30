@@ -431,7 +431,7 @@ public:
                                     for(int dli = -r, li = round(li_c)+dli; dli <= r; ++dli, ++li)
                                         if(li >= 0 && li < size[2]) {
                                             double r = sqrt(dhi*dhi+dki*dki+dli*dli); //TODO: replace this with proper distance in reciprocal angstroems
-                                            if(r < r_punch) {
+                                            if(r < r_punch && !isnan(at(hi, ki, li))) {
                                                 at(hi, ki, li) = fill_val;
                                             }
                                         }
