@@ -14,8 +14,16 @@ using Eigen::Matrix3i;
 using Eigen::Vector3i;
 using namespace std;
 
+struct RFactors {
+    double R1;
+    double R2;
+};
+
+
 vector<Matrix3i> expand_symmetry(const string& symmetry);
 
-float average(IntensityData<float>& inp, IntensityData<float>& res, const InputParameters& par);
+RFactors average(IntensityData<float>& inp, IntensityData<float>& res, const InputParameters& par);
+
+
 
 #endif //MEERKAT2_AVERAGE_SYMMETRY_H

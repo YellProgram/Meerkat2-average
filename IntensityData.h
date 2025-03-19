@@ -466,8 +466,7 @@ public:
         
         //TODO: check with reconstruciton -10 10 -10 10 -10 10   601 601 601 binning 5 5 5 - it adds extrarow of voxels to the left so new ll is -10.166666668
         //TODO: above is a bug. fix it
-        
-        
+
         vector<int> starting_indices(3);
         vector<double> new_lower_limits(3);
         vector<double> new_step_sizes(3);

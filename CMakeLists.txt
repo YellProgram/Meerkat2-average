@@ -12,7 +12,7 @@ set (CMAKE_CXX_STANDARD 14)
 set(KISSFFT_DIR lib/kiss_fft)
 include_directories(lib/eigen ${KISSFFT_DIR} ${KISSFFT_DIR}/tools)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O1") #-mtune=native -O1
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}") #-mtune=native -O1
 
 set(SOURCE_FILES
         InputParameters.cpp InputParameters.h Exceptions.h Symmetry.cpp Symmetry.h IntensityData.cpp IntensityData.h)

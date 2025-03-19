@@ -36,6 +36,7 @@ struct InputParameters {
     float r_punch;
     float r_fill;
     bool bin;
+    bool save_reciprocal_space_multipliers;
     bool fft;
     vector<int> binning;
     string centering;
@@ -61,7 +62,8 @@ struct InputParameters {
             add_constant(0),
             report_pixel_rint(false),
             report_pixel_variance(false),
-            report_pixel_multiplicity(false)
+            report_pixel_multiplicity(false),
+            save_reciprocal_space_multipliers(false)
     { };
 
     bool should_slice() {

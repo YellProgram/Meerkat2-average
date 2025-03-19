@@ -55,7 +55,7 @@ vector<Matrix3i> expand_symmetry(const string& symmetry) {
                                   el( y, x, z)});
     }else if (symmetry=="m-3") {
         return expand_generators({el(-x,-y, z),
-                                  el( -x,y,-z),
+                                  el( -x, y,-z),
                                   el( z, x, y),
                                   el(-x,-y,-z)});
     }else if (symmetry=="4/mmm") {
@@ -141,12 +141,33 @@ inline float sum_abs(const vector<float>::iterator &start, const vector<float>::
     return res;
 }
 
+inline float sum_sq(const vector<float>::iterator &start, const vector<float>::iterator &end) {
+    float res = 0;
+    for_each(start,
+             end,
+             [&](const float& i){
+                 res += i*i;
+             });
+
+    return res;
+}
+
 inline float linear_deviation_sum(const vector<float>::iterator &start, const vector<float>::iterator &end, float average) {
     float res = 0;
     for_each(start,
              end,
              [&](const float& i){
                  res += abs(i - average);
+             });
+    return res;
+}
+
+inline float linear_deviation_sum_sq(const vector<float>::iterator &start, const vector<float>::iterator &end, float average) {
+    float res = 0;
+    for_each(start,
+             end,
+             [&](const float& i){
+                 res += (i - average)*(i - average);
              });
     return res;
 }
@@ -189,8 +210,10 @@ inline bool fisnan(float x) {
     return isnan(x);
 }
 
+
+
 /// Returns Rint
-float average(IntensityData<float>& inp, IntensityData<float>& res, const InputParameters& par) {
+RFactors average(IntensityData<float>& inp, IntensityData<float>& res, const InputParameters& par) {
     vector<int> centre(3);
     for(int i=0; i<3; ++i) {
         centre[i] = round(-inp.lower_limits[i]/inp.step_sizes[i]);
@@ -215,6 +238,8 @@ float average(IntensityData<float>& inp, IntensityData<float>& res, const InputP
 
     double accumulated_abs_I = 0;
     double accumulated_abs_dI = 0;
+    double accumulated_I_sq = 0;
+    double accumulated_dI_sq = 0;
 
     //TODO: check grid is ok with symmetry, or otherwise ignore the portion which is outside when reconstructing
     //TODO: rewrite this loop in a linear fashion??
@@ -268,6 +293,12 @@ float average(IntensityData<float>& inp, IntensityData<float>& res, const InputP
                     accumulated_abs_I += sum_abs_I;
                     accumulated_abs_dI += sum_dI;
 
+                    float sum_I_sq = sum_sq(equivalent_intensities.begin(), intensities_last);
+                    float sum_dI_sq = linear_deviation_sum_sq(equivalent_intensities.begin(), intensities_last, average);
+                    accumulated_I_sq += sum_I_sq;
+                    accumulated_dI_sq += sum_dI_sq;
+
+
                     //put the average in correct places
                     for_each(unique_indices.begin(),
                              unique_indices.end(),
@@ -305,6 +336,6 @@ float average(IntensityData<float>& inp, IntensityData<float>& res, const InputP
                     }
                 }
 
-    return accumulated_abs_dI/accumulated_abs_I;
+    return {accumulated_abs_dI/accumulated_abs_I, sqrt(accumulated_dI_sq/accumulated_I_sq)};
 }
 

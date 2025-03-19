@@ -216,6 +216,8 @@ InputParameters parse_input(const string& filename) {
             par.report_pixel_rint = parse_bool(in, filename);
         else if(keyword == "REPORT_PIXEL_VARIANCE")
             par.report_pixel_variance = parse_bool(in, filename);
+        else if(keyword == "PREPARE_RECIPROCAL_SPACE_MULTIPLIERS")
+            par.save_reciprocal_space_multipliers = true;
         else if(keyword == "REPORT_PIXEL_MULTIPLICITY")
             par.report_pixel_multiplicity = parse_bool(in, filename);
         else if(keyword == "SCALES") {

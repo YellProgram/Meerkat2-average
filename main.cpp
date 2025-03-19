@@ -19,7 +19,7 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
-    cout << "Meerkat-average v. 0.39" << endl;
+    cout << "Meerkat-average v. 0.42" << endl;
 
     //    ReconstructionParameters par = load_refinement_parameters(argv[1]);
 
@@ -84,7 +84,7 @@ int main(int argc, char* argv[]) {
             auto Rint = average(inp, res, par);
 
             if(par.input_files.size() == 1) {
-                cout << "Averaging finished, Rint = " << Rint << endl;
+                cout << "Averaging finished, R1 = " << Rint.R1 << " R2 = " << Rint.R2 << endl;
             } else {
                 //otherwise the Rint is nonsence, so flag it should not be  reported to neither console nor the  .h5 file.
                 res.Rint = NAN;
@@ -104,6 +104,19 @@ int main(int argc, char* argv[]) {
 
         if(par.fft || par.trim_for_yell)
             res.prepare_for_fft();
+
+        if(par.save_reciprocal_space_multipliers) {
+            IntensityData<float> reciprocal_space_multipliers = res;
+            for(int i=0; i<reciprocal_space_multipliers.data.size(); ++i) {
+                if (isnan(reciprocal_space_multipliers.data[i])) {
+                    reciprocal_space_multipliers.data[i] = 0;
+                } else {
+                    reciprocal_space_multipliers.data[i] = 1;
+                }
+            }
+
+            reciprocal_space_multipliers.save("reciprocal_space_multipliers.h5");
+        }
 
         if(par.fft)
             res.FFT();
