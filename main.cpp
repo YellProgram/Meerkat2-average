@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <optional>
 #include "InputParameters.h"
 #include "Exceptions.h"
 #include "IntensityData.h"
@@ -19,7 +20,7 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
-    cout << "Meerkat-average v. 0.42" << endl;
+    cout << "Meerkat-average v. 0.43" << endl;
 
     //    ReconstructionParameters par = load_refinement_parameters(argv[1]);
 
@@ -69,10 +70,27 @@ int main(int argc, char* argv[]) {
         }
 
         auto inp = IntensityData<float>::read(par.input_files[0], slice);
+        std::optional<IntensityData<float>> scale_array;
+        //If we are merging datasets, one needs to normalize the result by the sum of scales
+        if (par.merge_datasets && par.input_files.size()>1) {
+            scale_array = IntensityData<float>::empty(inp);
+            scale_array->accumulate_non_nan_scales(inp, par.scales[0]);
+            inp.set_nans_to_zeros();
+        }
+
         inp.scale(par.scales[0]);
         for(int i = 1; i<par.input_files.size(); ++i) {
             auto t = IntensityData<float>::read(par.input_files[i], slice);
-            inp.accumulate(t, par.scales[i]);
+            inp.accumulate(t, par.scales[i], !par.merge_datasets);
+
+            if (par.merge_datasets) {
+                scale_array->accumulate_non_nan_scales(t, par.scales[i]);
+            }
+        }
+
+        if (par.merge_datasets && par.input_files.size()>1) {
+            inp.divide_by(*scale_array);
+            scale_array.reset();
         }
 
         IntensityData<float> res;

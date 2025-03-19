@@ -220,6 +220,8 @@ InputParameters parse_input(const string& filename) {
             par.save_reciprocal_space_multipliers = true;
         else if(keyword == "REPORT_PIXEL_MULTIPLICITY")
             par.report_pixel_multiplicity = parse_bool(in, filename);
+        else if(keyword == "MERGE_DATASETS")
+            par.merge_datasets = parse_bool(in, filename);
         else if(keyword == "SCALES") {
             //TODO: here remove bugs. Split names not by ' ' but by '\s'. trim string before doing so
             string inputs;

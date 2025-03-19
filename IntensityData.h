@@ -357,10 +357,34 @@ public:
             d *= sc;
     }
 
-    void accumulate(IntensityData& inp, double scale = 1) {
+    void set_nans_to_zeros() {
+        for(auto d1 = data.begin(); d1 != data.end(); ++d1)
+            if (isnan(*d1))
+                *d1=0;
+    }
+
+    void divide_by(IntensityData& inp) {
         for(auto d1 = data.begin(), d2 = inp.data.begin(); d1 != data.end(); ++d1, ++d2)
         {
-            *d1 += (*d2)*scale;
+            *d1 /= *d2;
+        }
+    }
+
+    void accumulate(IntensityData& inp, double scale = 1, bool accumulate_nans = true) {
+        for(auto d1 = data.begin(), d2 = inp.data.begin(); d1 != data.end(); ++d1, ++d2)
+        {
+            auto val = *d2;
+            if(accumulate_nans || !isnan(val)) //Accumulate propagating nans if the flag tells so, otherwise only add if the value is non nan.
+                *d1 += val*scale;
+        }
+    }
+
+    ///Add the value of scale to each pixel which is measured (not equal to nan) in the dataset.
+    void accumulate_non_nan_scales(IntensityData& inp, double scale = 1) {
+        for(auto d1 = data.begin(), d2 = inp.data.begin(); d1 != data.end(); ++d1, ++d2)
+        {
+            if(!isnan(*d2))
+                *d1 += scale;
         }
     }
 

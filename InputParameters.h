@@ -40,6 +40,7 @@ struct InputParameters {
     bool fft;
     vector<int> binning;
     string centering;
+    bool merge_datasets;
     bool trim_for_yell;
     double add_constant;
     bool report_pixel_rint;
@@ -63,7 +64,8 @@ struct InputParameters {
             report_pixel_rint(false),
             report_pixel_variance(false),
             report_pixel_multiplicity(false),
-            save_reciprocal_space_multipliers(false)
+            save_reciprocal_space_multipliers(false),
+            merge_datasets(false)
     { };
 
     bool should_slice() {
