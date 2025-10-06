@@ -25,6 +25,7 @@ function(DownloadBitshuffleFor targetName)
             SOURCE_DIR ${bitshuffle_source_dir}
             INSTALL_DIR ${CMAKE_BINARY_DIR}
             CMAKE_ARGS "${CMAKE_ARGS}"
+            CMAKE_ARGS "${ARCH_CMAKE_ARG}"
             CMAKE_ARGS "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
             CMAKE_ARGS "-DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}"
             CMAKE_ARGS "-DCMAKE_C_STANDARD_INCLUDE_DIRECTORIES=${HDF5_INSTALL_INCLUDE_DIR}"
@@ -32,6 +33,8 @@ function(DownloadBitshuffleFor targetName)
             DEPENDS hdf5_local
             DEPENDS download_hdf5
     )
+
+
     add_library(bitshuffle STATIC IMPORTED)
     add_dependencies(bitshuffle hdf5_local build_bitshuffle)
     target_include_directories(bitshuffle INTERFACE ${HDF5_INSTALL_INCLUDE_DIR})
@@ -43,6 +46,10 @@ function(DownloadBitshuffleFor targetName)
 endfunction()
 
 function(DownloadHDF5For targetName)
+    # 🛑 DEBUG: Check CMAKE ARGS before HDF5
+    message(STATUS "HDF5 ExternalProject CMAKE_ARGS: ${CMAKE_ARGS}   And Universtal Args: ${UNIVERSAL_ARCH_ARGS}")
+
+
     find_package(HDF5)
     if (HDF5_FOUND AND NOT CMAKE_TOTAL_STATIC)
         target_include_directories(${targetName} PUBLIC ${HDF5_INCLUDE_DIR})
@@ -58,30 +65,36 @@ function(DownloadHDF5For targetName)
         set(HDF5_INSTALL_INCLUDE_DIR ${HDF5_PREFIX}/install/include)
         set(HDF5_INSTALL_DATA_DIR ${HDF5_PREFIX}/install)
         include(ExternalProject)
+        message(STATUS "HDF5 ExternalProject CMAKE_ARGS: ${CMAKE_ARGS}   And Universtal Args: ${UNIVERSAL_ARCH_ARGS}")
+
         ExternalProject_Add(
                 download_hdf5
                 URL https://git.3lp.cx/packages/hdf5-1.12.0.tar.bz2
                 URL_MD5 1fa68c4b11b6ef7a9d72ffa55995f898
                 PREFIX ${HDF5_PREFIX}
-                INSTALL_DIR ${HDF5_INSTALL_BIN_DIR}
-                CMAKE_ARGS "${CMAKE_ARGS}"
-                CMAKE_ARGS "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
-                CMAKE_ARGS "-DCMAKE_INSTALL_LIBDIR=${HDF5_INSTALL_LIB_DIR}"
-                CMAKE_ARGS "-DCMAKE_INSTALL_BINDIR=${HDF5_INSTALL_BIN_DIR}"
-                CMAKE_ARGS "-DCMAKE_INSTALL_INCLUDEDIR=${HDF5_INSTALL_INCLUDE_DIR}"
-                CMAKE_ARGS "-DHDF5_INSTALL_BIN_DIR=${HDF5_INSTALL_BIN_DIR}"
-                CMAKE_ARGS "-DHDF5_INSTALL_LIB_DIR=${HDF5_INSTALL_LIB_DIR}"
-                CMAKE_ARGS "-DHDF5_INSTALL_DATA_DIR=${HDF5_INSTALL_DATA_DIR}"
-                CMAKE_ARGS "-DHDF5_INSTALL_INCLUDE_DIR=${HDF5_INSTALL_INCLUDE_DIR}"
-                CMAKE_ARGS "-DHDF5_EXTERNALLY_CONFIGURED=${HDF5_EXTERNALLY_CONFIGURED}"
-                CMAKE_ARGS "-DHDF5_BUILD_FORTRAN=OFF"
-                CMAKE_ARGS "-DBUILD_SHARED_LIBS=OFF"
-                CMAKE_ARGS "-DBUILD_TESTING=OFF"
-                CMAKE_ARGS "-DHDF5_BUILD_TOOLS=OFF"
-                CMAKE_ARGS "-DHDF5_BUILD_EXAMPLES=OFF"
-                CMAKE_ARGS "-DHDF5_BUILD_HL_LIB=OFF"
-                CMAKE_ARGS "-DHDF5_BUILD_CPP_LIB=ON"
-                CMAKE_ARGS "-DDEFAULT_API_VERSION:STRING=v110"
+                CONFIGURE_COMMAND
+                    ${CMAKE_COMMAND}
+                    -DCMAKE_INSTALL_LIBDIR=${HDF5_INSTALL_LIB_DIR}
+                    -DCMAKE_INSTALL_BINDIR=${HDF5_INSTALL_BIN_DIR}
+                    -DCMAKE_INSTALL_INCLUDEDIR=${HDF5_INSTALL_INCLUDE_DIR}
+                    -DHDF5_INSTALL_BIN_DIR=${HDF5_INSTALL_BIN_DIR}
+                    -DHDF5_INSTALL_LIB_DIR=${HDF5_INSTALL_LIB_DIR}
+                    -DHDF5_INSTALL_DATA_DIR=${HDF5_INSTALL_DATA_DIR}
+                    -DHDF5_INSTALL_INCLUDE_DIR=${HDF5_INSTALL_INCLUDE_DIR}
+                    -DHDF5_EXTERNALLY_CONFIGURED=${HDF5_EXTERNALLY_CONFIGURED}
+                    -DHDF5_BUILD_FORTRAN=OFF
+                    -DBUILD_SHARED_LIBS=OFF
+                    -DBUILD_TESTING=OFF
+                    -DHDF5_BUILD_TOOLS=OFF
+                    -DHDF5_BUILD_EXAMPLES=OFF
+                    -DHDF5_BUILD_HL_LIB=OFF
+                    -DHDF5_BUILD_CPP_LIB=ON
+                    -DDEFAULT_API_VERSION:STRING=v110
+                    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+                    ${ARCH_CMAKE_ARG}
+                    -S <SOURCE_DIR>
+                    -B <BINARY_DIR>
+
         )
         add_library(hdf5_local STATIC IMPORTED)
         add_dependencies(hdf5_local download_hdf5)

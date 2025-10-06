@@ -5,6 +5,20 @@ project(Meerkat2-average)
 #
 #set(HDF5_LIBRARIES hdf5_hl_cpp hdf5_cpp hdf5_hl hdf5 szip z )
 
+if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+    # Define a variable that controls the build architecture(s)
+    # The user should set this via -DTARGET_ARCH=arm64 or -DTARGET_ARCH=x86_64
+    set(TARGET_ARCH "arm64" CACHE STRING "Target architecture for macOS (e.g., arm64, x86_64).")
+
+    # Set the main project's CMAKE_OSX_ARCHITECTURES based on the user's choice
+    set(CMAKE_OSX_ARCHITECTURES "${TARGET_ARCH}" CACHE STRING "OSX Architectures" FORCE)
+
+    # Define the argument string to pass to ExternalProject_Add
+    set(ARCH_CMAKE_ARG "-DCMAKE_OSX_ARCHITECTURES=${TARGET_ARCH}")
+else()
+    set(ARCH_CMAKE_ARG "")
+endif()
+
 include(cmake/hdf5.cmake)
 
 set (CMAKE_CXX_STANDARD 17)

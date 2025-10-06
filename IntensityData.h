@@ -537,7 +537,7 @@ public:
     }
 
     void prepare_for_fft() {
-        //cut last rows and remove NANs
+        //cut last rows
 
         vector<size_t> dims(3);
 
@@ -551,12 +551,23 @@ public:
         for(int i=0; i<3; ++i)
             dims[i] = trim(size[i]);
 
-        //trim last rows and remove nans
+        //trim last rows
         int bi = 0;
         for(int hi = 0; hi < dims[0]; ++hi)
             for(int ki = 0; ki < dims[1]; ++ki)
                 for(int li = 0; li < dims[2]; ++li) {
-                    auto val = at(hi, ki, li);
+                    data[bi] = at(hi, ki, li);
+
+                    ++bi;
+                }
+
+        size = dims;
+        data.resize(size[0]*size[1]*size[2]);
+    }
+
+    void set_nans_to_zero() {
+        for(int bi = 0; bi < data.size(); ++bi) {
+                    auto val = data[bi];
                     if(!isnan(val))
                         data[bi] = val;
                     else
@@ -565,8 +576,6 @@ public:
                     ++bi;
                 }
 
-        size = dims;
-        data.resize(size[0]*size[1]*size[2]);
     }
 
     void add_constant(double c) {

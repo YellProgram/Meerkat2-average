@@ -20,7 +20,7 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
-    cout << "Meerkat-average v. 0.43" << endl;
+    cout << "Meerkat-average v. 0.44" << endl;
 
     //    ReconstructionParameters par = load_refinement_parameters(argv[1]);
 
@@ -133,8 +133,11 @@ int main(int argc, char* argv[]) {
                 }
             }
 
-            reciprocal_space_multipliers.save("reciprocal_space_multipliers.h5");
+            reciprocal_space_multipliers.save("reciprocal_space_multiplier.h5");
         }
+
+        if(par.fft || par.trim_for_yell)
+            res.set_nans_to_zeros();
 
         if(par.fft)
             res.FFT();
