@@ -46,10 +46,6 @@ function(DownloadBitshuffleFor targetName)
 endfunction()
 
 function(DownloadHDF5For targetName)
-    # 🛑 DEBUG: Check CMAKE ARGS before HDF5
-    message(STATUS "HDF5 ExternalProject CMAKE_ARGS: ${CMAKE_ARGS}   And Universtal Args: ${UNIVERSAL_ARCH_ARGS}")
-
-
     find_package(HDF5)
     if (HDF5_FOUND AND NOT CMAKE_TOTAL_STATIC)
         target_include_directories(${targetName} PUBLIC ${HDF5_INCLUDE_DIR})
@@ -65,7 +61,6 @@ function(DownloadHDF5For targetName)
         set(HDF5_INSTALL_INCLUDE_DIR ${HDF5_PREFIX}/install/include)
         set(HDF5_INSTALL_DATA_DIR ${HDF5_PREFIX}/install)
         include(ExternalProject)
-        message(STATUS "HDF5 ExternalProject CMAKE_ARGS: ${CMAKE_ARGS}   And Universtal Args: ${UNIVERSAL_ARCH_ARGS}")
 
         ExternalProject_Add(
                 download_hdf5
