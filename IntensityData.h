@@ -274,6 +274,8 @@ public:
                 res.lower_limits[i] += res.step_sizes[i]*start_pixels[i];
             }
 
+
+
             DataSet dataset = dataFile.openDataSet("data");
             DataSpace dataspace = dataset.getSpace();
             vector<hsize_t> memspaceOffset(start_pixels.begin(), start_pixels.end());
@@ -498,6 +500,7 @@ public:
         for(int i = 0; i < 3; ++i) {
             assert(binning[i] % 2 == 1);
 
+
             int central_pixel_index = round(-lower_limits[i]/step_sizes[i]);
             int available_pixels = central_pixel_index + binning[i]/2 - 1;
             int starting_index = central_pixel_index - round(ceil(static_cast<double> (available_pixels)/binning[i])*binning[i]);
@@ -610,9 +613,15 @@ public:
         kiss_fftnd(cfg, buffer.data(), buffer.data());
 
         for(int i = 0; i < 3; ++i) {
-            auto t = lower_limits[i];
-            lower_limits[i] = -0.5/step_sizes[i];
-            step_sizes[i] = -0.5/t;
+            if (dims[i]==1) {
+                lower_limits[i]=0;
+                step_sizes[i]=1;
+            } else {
+                auto const t = lower_limits[i];
+                lower_limits[i] = -0.5/step_sizes[i];
+                step_sizes[i] = -0.5/t;
+            }
+
         }
         isDirect = !isDirect;
 

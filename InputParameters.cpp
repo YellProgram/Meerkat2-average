@@ -235,6 +235,14 @@ InputParameters parse_input(const string& filename) {
         }else if(keyword=="BIN"){
             par.bin = true;
             in >> par.binning[0] >> par.binning[1] >> par.binning[2];
+
+            for (auto bin : par.binning) {
+                if (bin % 2 == 0) {
+                    throw ParserError("Error: binning must have odd values.");
+                }
+
+            }
+
         }else if(keyword=="FFT"){
             par.fft = true;
         }else if(keyword=="CENTERING")
