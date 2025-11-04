@@ -488,56 +488,80 @@ public:
         return data[ind2ind(hi, ki, li)];
     }
 
-    IntensityData<T> binned(vector<int> binning) {
-        
-        //TODO: check with reconstruciton -10 10 -10 10 -10 10   601 601 601 binning 5 5 5 - it adds extrarow of voxels to the left so new ll is -10.166666668
-        //TODO: above is a bug. fix it
+IntensityData<T> binned(vector<int> binning) {
 
-        vector<int> starting_indices(3);
-        vector<double> new_lower_limits(3);
-        vector<double> new_step_sizes(3);
-        vector<size_t> new_size(3);
-        for(int i = 0; i < 3; ++i) {
-            assert(binning[i] % 2 == 1);
+    vector<int> starting_indices(3);
+    vector<double> new_lower_limits(3);
+    vector<double> new_step_sizes(3);
+    vector<size_t> new_size(3);
 
+    for(int i = 0; i < 3; ++i) {
+        // Must use odd binning to maintain a clear center point.
+        assert(binning[i] % 2 == 1);
 
-            int central_pixel_index = round(-lower_limits[i]/step_sizes[i]);
-            int available_pixels = central_pixel_index + binning[i]/2 - 1;
-            int starting_index = central_pixel_index - round(ceil(static_cast<double> (available_pixels)/binning[i])*binning[i]);
-            starting_indices[i] = starting_index;
+        // Calculate the number of new bins (includes partial bins).
+        size_t num_bins = static_cast<size_t>(ceil(static_cast<double>(size[i]) / binning[i]));
+        new_size[i] = num_bins;
 
-            new_lower_limits[i] = lower_limits[i] + starting_indices[i]*step_sizes[i];
+        // Calculate the total number of pixels needed to form these 'num_bins' exactly.
+        size_t needed_pixels = num_bins * binning[i];
 
-            int effective_pixels = size[i] - starting_indices[i];
-            new_size[i] = ceil(static_cast<double> (effective_pixels)/binning[i]);
-            new_step_sizes[i] = step_sizes[i]*binning[i];
-        }
+        // Determine the Starting Index (SI).
+        // SI is the number of 'virtual' pixels added to the negative side
+        // to ensure center-alignment (e.g., -2 for 601 pixels and binning 5).
+        int added_pixels = needed_pixels - size[i];
+        int starting_index = -added_pixels / 2;
+        starting_indices[i] = starting_index;
 
-        IntensityData<T> res;
-        res.size = new_size;
-        res.lower_limits = new_lower_limits;
-        res.step_sizes = new_step_sizes;
-        res.isDirect = isDirect;
-        res.unit_cell = unit_cell;
-        res.data.resize(new_size[0]*new_size[1]*new_size[2]);
+        // The new physical lower limit is shifted by the 'virtual' starting pixels.
+        new_lower_limits[i] = lower_limits[i] + starting_indices[i] * step_sizes[i];
 
-        for(int hr = 0, hic = starting_indices[0]; hr < new_size[0]; ++hr, hic+=binning[0])
-            for(int kr = 0, kic = starting_indices[1]; kr < new_size[1]; ++kr, kic+=binning[1])
-                for(int lr = 0, lic = starting_indices[2]; lr < new_size[2]; ++lr, lic+=binning[2]) {
-                    T accum = 0;
-                    int Npix = 0;
-
-                    for(int hi = max(hic-binning[0]/2,0); hi < min(hic+binning[0]/2+1, size[0]); ++hi)
-                        for(int ki = max(kic-binning[1]/2,0); ki < min(kic+binning[1]/2+1, size[1]); ++ki)
-                            for(int li = max(lic-binning[2]/2,0); li < min(lic+binning[2]/2+1, size[2]); ++li) {
-                                accum += at(hi,ki,li);
-                                Npix += 1;
-                            }
-                    res.at(hr, kr, lr) += accum/Npix;
-                }
-
-        return res;
+        new_step_sizes[i] = step_sizes[i] * binning[i];
     }
+
+    IntensityData<T> res;
+    res.size = new_size;
+    res.lower_limits = new_lower_limits;
+    res.step_sizes = new_step_sizes;
+    res.isDirect = isDirect;
+    res.unit_cell = unit_cell;
+    res.data.resize(new_size[0] * new_size[1] * new_size[2]);
+
+    // Outer loops iterate over the new, smaller size (hr, kr, lr).
+    for(int hr = 0; hr < new_size[0]; ++hr)
+        for(int kr = 0; kr < new_size[1]; ++kr)
+            for(int lr = 0; lr < new_size[2]; ++lr) {
+
+                // Calculate the block's START and END indices in the original *virtual* space.
+                int h_virtual_start = starting_indices[0] + hr * binning[0];
+                int k_virtual_start = starting_indices[1] + kr * binning[1];
+                int l_virtual_start = starting_indices[2] + lr * binning[2];
+
+                int h_virtual_end = h_virtual_start + binning[0];
+                int k_virtual_end = k_virtual_start + binning[1];
+                int l_virtual_end = l_virtual_start + binning[2];
+
+                T accum = 0;
+                int Npix = 0;
+
+                // Inner loops iterate only over the part of the bin that exists
+                // within the original array's bounds [0, size[i]).
+                for(int hi = max(h_virtual_start, 0); hi < min(h_virtual_end, (int)size[0]); ++hi)
+                    for(int ki = max(k_virtual_start, 0); ki < min(k_virtual_end, (int)size[1]); ++ki)
+                        for(int li = max(l_virtual_start, 0); li < min(l_virtual_end, (int)size[2]); ++li) {
+                            accum += at(hi,ki,li);
+                            Npix += 1;
+                        }
+
+                if (Npix > 0) {
+                    res.at(hr, kr, lr) = accum / Npix;
+                } else {
+                    res.at(hr, kr, lr) = 0;
+                }
+            }
+
+    return res;
+}
 
     void prepare_for_fft() {
         //cut last rows
