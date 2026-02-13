@@ -56,7 +56,7 @@ target_link_libraries(Meerkat2-average meerkat-average-lib kissfft)
 FetchContent_Declare(
     cxxtest
     GIT_REPOSITORY https://github.com/CxxTest/cxxtest.git
-    GIT_TAG 4.4
+    GIT_TAG master
 )
 FetchContent_Populate(cxxtest)
 
