@@ -52,20 +52,15 @@ target_include_directories(kissfft PUBLIC ${kiss_fft_SOURCE_DIR} ${kiss_fft_SOUR
 add_executable(Meerkat2-average main.cpp)
 target_link_libraries(Meerkat2-average meerkat-average-lib kissfft)
 
-# CxxTest
+# Google Test
 FetchContent_Declare(
-    cxxtest
-    GIT_REPOSITORY https://github.com/CxxTest/cxxtest.git
-    GIT_TAG master
+    googletest
+    URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.tar.gz
 )
-FetchContent_Populate(cxxtest)
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
 
-set(CXXTEST_PATH ${cxxtest_SOURCE_DIR})
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${cxxtest_SOURCE_DIR}/build_tools/cmake")
-find_package(CxxTest)
-
-if(CXXTEST_FOUND)
-    include_directories(${CXXTEST_INCLUDES})
-    cxx_test(test-meerkat-average test_meerkat_average.h)
-    target_link_libraries(test-meerkat-average meerkat-average-lib)
-endif()
+enable_testing()
+add_executable(test-meerkat-average test_meerkat_average.cpp)
+target_link_libraries(test-meerkat-average meerkat-average-lib GTest::gtest_main)
+add_test(NAME test-meerkat-average COMMAND test-meerkat-average)
