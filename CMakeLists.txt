@@ -1,9 +1,11 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.14)
+if(POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)
+endif()
+if(POLICY CMP0169)
+    cmake_policy(SET CMP0169 OLD)
+endif()
 project(Meerkat2-average)
-
-#set(LIBHDF5_DIR lib/hdf5)
-#
-#set(HDF5_LIBRARIES hdf5_hl_cpp hdf5_cpp hdf5_hl hdf5 szip z )
 
 if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
     set(TARGET_ARCH "arm64" CACHE STRING "Target architecture for macOS (e.g., arm64, x86_64).")
@@ -16,12 +18,26 @@ else()
 endif()
 
 include(cmake/hdf5.cmake)
+include(FetchContent)
 
-set (CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 17)
 
-set(KISSFFT_DIR lib/kiss_fft)
-set(EIGEN_DIR lib/eigen-3.4.0)
-include_directories(${EIGEN_DIR} ${KISSFFT_DIR} ${KISSFFT_DIR}/tools)
+# Eigen - header-only linear algebra library
+FetchContent_Declare(
+    eigen
+    URL https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz
+)
+FetchContent_Populate(eigen)
+
+# kiss_fft - small FFT library
+FetchContent_Declare(
+    kiss_fft
+    GIT_REPOSITORY https://github.com/mborgerding/kissfft.git
+    GIT_TAG v131
+)
+FetchContent_Populate(kiss_fft)
+
+include_directories(${eigen_SOURCE_DIR} ${kiss_fft_SOURCE_DIR} ${kiss_fft_SOURCE_DIR}/tools)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}") #-mtune=native -O1
 
@@ -30,11 +46,22 @@ set(SOURCE_FILES
 add_library(meerkat-average-lib ${SOURCE_FILES})
 DownloadHDF5For(meerkat-average-lib)
 
-add_library(kissfft ${KISSFFT_DIR}/kiss_fft.c ${KISSFFT_DIR}/tools/kiss_fftnd.c) #
-add_executable(Meerkat2-average main.cpp)
-target_link_libraries(Meerkat2-average meerkat-average-lib  kissfft)
+add_library(kissfft ${kiss_fft_SOURCE_DIR}/kiss_fft.c ${kiss_fft_SOURCE_DIR}/tools/kiss_fftnd.c)
+target_include_directories(kissfft PUBLIC ${kiss_fft_SOURCE_DIR} ${kiss_fft_SOURCE_DIR}/tools)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/lib/cxxtest/build_tools/cmake")
+add_executable(Meerkat2-average main.cpp)
+target_link_libraries(Meerkat2-average meerkat-average-lib kissfft)
+
+# CxxTest
+FetchContent_Declare(
+    cxxtest
+    GIT_REPOSITORY https://github.com/CxxTest/cxxtest.git
+    GIT_TAG 4.4
+)
+FetchContent_Populate(cxxtest)
+
+set(CXXTEST_PATH ${cxxtest_SOURCE_DIR})
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${cxxtest_SOURCE_DIR}/build_tools/cmake")
 find_package(CxxTest)
 
 if(CXXTEST_FOUND)
