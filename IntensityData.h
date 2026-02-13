@@ -221,7 +221,7 @@ public:
         readProps.setCache(mdc_nelmts, 269251, 1024*1024*500, rdcc_w0); //Magic numbers to tune performance
         H5File dataFile = H5File(filename, H5F_ACC_RDONLY, FileCreatPropList::DEFAULT, readProps);
 
-        if(not isYellFormat(dataFile))
+        if(!isYellFormat(dataFile))
             throw UnknownFormat();
 
         //Read dataset and crystal data
@@ -414,7 +414,7 @@ public:
                     double li_c = (l-lower_limits[2])/step_sizes[2];
 
                     if(centering == "F") {
-                        if(! ( abs(h%2)==abs(k%2) and abs(h%2)==abs(l%2) ))
+                        if(! ( abs(h%2)==abs(k%2) && abs(h%2)==abs(l%2) ))
                             continue;
                     }else if(centering == "I") {
                         if(! ((h+k+l)%2 == 0))

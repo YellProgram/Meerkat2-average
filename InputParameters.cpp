@@ -31,7 +31,7 @@ ContextAroundPosition get_context(istream& in) {
         in.seekg(0,ios_base::end);
     }
 
-    int context_position = in.tellg();
+    auto context_position = in.tellg();
     vector<string> lines;
 
     in.seekg(0,ios_base::beg);
@@ -41,7 +41,7 @@ ContextAroundPosition get_context(istream& in) {
         getline(in,line);
         lines.push_back(line);
     } else
-        while(int(in.tellg()) < context_position and !in.eof()) {
+        while(in.tellg() < context_position && !in.eof()) {
             getline(in,line);
             lines.push_back(line);
         }
@@ -96,7 +96,7 @@ ContextAroundPosition get_context(istream& in) {
     return ContextAroundPosition{lines_before.str(), current_line, lines_after.str(), position_within_current_line, current_line_no, context.str()};
 }
 
-string throw_parser_error(const string& filename, istream& in,const string& description) {
+[[noreturn]] void throw_parser_error(const string& filename, istream& in,const string& description) {
     ostringstream err_text;
     auto ctx = get_context(in);
 
@@ -108,7 +108,7 @@ string throw_parser_error(const string& filename, istream& in,const string& desc
     throw ParserError(err_text.str());
 }
 
-string throw_undefined_keyword(const string& filename, string keyword) {
+[[noreturn]] void throw_undefined_keyword(const string& filename, string keyword) {
     ostringstream err_text;
     err_text << "Error parsing \"" << filename << "\" file:" << endl;
     err_text << "keyword " << keyword << " is missing." << endl;
@@ -116,7 +116,7 @@ string throw_undefined_keyword(const string& filename, string keyword) {
     throw ParserError(err_text.str());
 }
 
-string throw_error(const string& filename, string error) {
+[[noreturn]] void throw_error(const string& filename, string error) {
     ostringstream err_text;
     err_text << "Error parsing \"" << filename << "\" file:" << endl;
     err_text << error << endl;
@@ -178,7 +178,7 @@ InputParameters parse_input(const string& filename) {
         if (in.eof())
             break;
 
-        if (keyword[0] == '!' or keyword[0] == '#') {
+        if (keyword[0] == '!' || keyword[0] == '#') {
             getline(in, keyword);
             continue;
         }
