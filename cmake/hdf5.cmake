@@ -94,9 +94,9 @@ function(DownloadHDF5For targetName)
         add_library(hdf5_local STATIC IMPORTED)
         add_dependencies(hdf5_local download_hdf5)
         target_link_libraries(hdf5_local INTERFACE ${CMAKE_DL_LIBS})
-        if (WIN32)
-            #apparently on github actions with gnu compilers stupid prefix does not appear in hdf5 library
-            #set(STUPID_PREFIX "lib")
+        if (WIN32 AND MSVC)
+            # HDF5's CMake explicitly prefixes "lib" on Windows, but MSVC's CMAKE_STATIC_LIBRARY_PREFIX is empty
+            set(STUPID_PREFIX "lib")
         endif ()
         if (CMAKE_BUILD_TYPE MATCHES Release)
             set(lib_hdf5_name ${CMAKE_STATIC_LIBRARY_PREFIX}${STUPID_PREFIX}hdf5${CMAKE_STATIC_LIBRARY_SUFFIX})
