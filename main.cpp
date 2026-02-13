@@ -27,8 +27,6 @@ int main(int argc, char* argv[]) {
     try {
         InputParameters par = parse_input(argv[1]);
 
-
-
         //TODO: do proper averaging when more than one dataset is available. In such a case outlier rejection maybe probably should be working on the level of different datasets. And for sure, the Rint should be showing that
 
         //punch_and_fill, bin, fft, trim_for_yell
